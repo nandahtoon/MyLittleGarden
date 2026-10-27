@@ -1,0 +1,258 @@
+{
+  "schema": "mylittlegarden.screen-flow.v1",
+  "title": "Little Wonder Garden MVP screen-flow contract",
+  "scope": "implemented MVP, not future ideas",
+  "canvas": {
+    "width": 1280,
+    "height": 800,
+    "orientation": "landscape",
+    "scaling": "uniform-fit",
+    "safe_area": "verify on device"
+  },
+  "screens": [
+    {
+      "id": "welcome",
+      "entry": true,
+      "goal": "invite gentle play",
+      "actions": [
+        "play"
+      ],
+      "back": "stay",
+      "default_focus": "play",
+      "exit": [
+        "garden"
+      ]
+    },
+    {
+      "id": "garden",
+      "goal": "choose Plant or Water, tap or drag across nine plots; explore pond",
+      "actions": [
+        "select_seed",
+        "select_water",
+        "plot_touch",
+        "plot_drag",
+        "toggle_sound",
+        "pond_tap",
+        "open_rest",
+        "hold_parent_gear"
+      ],
+      "back": "no forced exit",
+      "exit": [
+        "rest",
+        "parent"
+      ]
+    },
+    {
+      "id": "rest",
+      "goal": "nonjudgmental pause, no lockout",
+      "actions": [
+        "return_to_garden"
+      ],
+      "back": "garden",
+      "exit": [
+        "garden"
+      ]
+    },
+    {
+      "id": "parent",
+      "goal": "adjust device-local settings only",
+      "actions": [
+        "sound_setting",
+        "break_toggle",
+        "break_interval_cycle",
+        "reset_arm",
+        "reset_confirm",
+        "done"
+      ],
+      "back": "garden",
+      "exit": [
+        "garden"
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "from": "welcome",
+      "event": "tap_play",
+      "to": "garden",
+      "guard": "release within play hit area",
+      "implemented": true
+    },
+    {
+      "from": "garden",
+      "event": "tap_rest",
+      "to": "rest",
+      "guard": "none",
+      "implemented": true
+    },
+    {
+      "from": "garden",
+      "event": "break_interval_elapsed",
+      "to": "rest",
+      "guard": "breaks_enabled and garden time >= break_minutes",
+      "implemented": true
+    },
+    {
+      "from": "rest",
+      "event": "tap_back",
+      "to": "garden",
+      "guard": "none",
+      "implemented": true
+    },
+    {
+      "from": "garden",
+      "event": "hold_gear",
+      "to": "parent",
+      "guard": "press continuously 2.5s without leaving tolerance box; current automated emulator QA failing",
+      "implemented": true,
+      "verified_on_emulator": false
+    },
+    {
+      "from": "parent",
+      "event": "tap_done",
+      "to": "garden",
+      "guard": "none",
+      "implemented": true
+    }
+  ],
+  "garden": {
+    "plots": 9,
+    "layout": {
+      "rows": 3,
+      "cols": 3,
+      "start": [
+        314,
+        181
+      ],
+      "step": [
+        237,
+        154
+      ],
+      "size": [
+        202,
+        126
+      ]
+    },
+    "states": [
+      {
+        "id": 0,
+        "name": "empty"
+      },
+      {
+        "id": 1,
+        "name": "seed"
+      },
+      {
+        "id": 2,
+        "name": "sprout"
+      },
+      {
+        "id": 3,
+        "name": "flower"
+      }
+    ],
+    "transitions": [
+      {
+        "tool": "seed",
+        "from": 0,
+        "to": 1,
+        "note": "seed sound and gentle acknowledgment"
+      },
+      {
+        "tool": "seed",
+        "from": "1,2,3",
+        "to": "unchanged",
+        "note": "no duplicate planting or punishment"
+      },
+      {
+        "tool": "water",
+        "from": 0,
+        "to": 0,
+        "note": "soft cue to plant first"
+      },
+      {
+        "tool": "water",
+        "from": 1,
+        "to": 2,
+        "note": "sprout"
+      },
+      {
+        "tool": "water",
+        "from": 2,
+        "to": 3,
+        "note": "flower"
+      },
+      {
+        "tool": "water",
+        "from": 3,
+        "to": 3,
+        "note": "flower stays alive; soft rain cue"
+      }
+    ],
+    "flower_order": [
+      "cosmos",
+      "sunflower",
+      "tulip",
+      "daisy",
+      "poppy",
+      "bluebell"
+    ],
+    "mapping": "flower_order[plot_index % 6] deterministic",
+    "selection_default": "seed",
+    "save_on": [
+      "0_to_1",
+      "1_to_2",
+      "2_to_3",
+      "sound_toggle",
+      "parent_preference_change",
+      "confirmed_reset"
+    ]
+  },
+  "parent_settings": {
+    "entry_hold_seconds": 2.5,
+    "reminder_choices_minutes": [
+      5,
+      10,
+      15
+    ],
+    "default_reminder_minutes": 10,
+    "default_reminder_on": true,
+    "default_sound_on": true,
+    "reset_confirmation_taps": 2,
+    "notice": "Convenience barrier, not an adult-verification security gate"
+  },
+  "storage": {
+    "type": "device-local",
+    "path": "user://little_wonder_garden.json",
+    "schema_version": 1,
+    "keys": [
+      "version",
+      "plots",
+      "sound_enabled",
+      "break_enabled",
+      "break_minutes"
+    ],
+    "identity_data": false
+  },
+  "constraints": [
+    "No ads",
+    "No accounts",
+    "No network",
+    "No in-app purchases",
+    "No leaderboards",
+    "No streaks",
+    "No pressure to continue"
+  ],
+  "implementation": {
+    "scene": "scenes/main.tscn",
+    "controller": "scripts/garden_game.gd",
+    "save_adapter": "scripts/save_store.gd"
+  },
+  "status": {
+    "source": "implemented",
+    "android_debug_apk": "build CI passed",
+    "emulator": "visual gameplay observed on isolated Godot 4.7.2/swangle test; end-to-end QA not passed",
+    "physical_android": "unverified",
+    "ipad": "unverified"
+  }
+}
