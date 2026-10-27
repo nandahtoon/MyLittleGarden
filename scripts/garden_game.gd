@@ -14,6 +14,7 @@ const COLOR_CREAM := Color("fffaf0")
 const COLOR_GROUND := Color("e6f0d8")
 const COLOR_GREEN := Color("63966d")
 const COLOR_WATER := Color("87c8cf")
+const FLOWER_ART := ["cosmos", "sunflower", "tulip", "daisy", "poppy", "bluebell"]
 
 var plots: Array[int] = []
 var screen := "welcome"
@@ -30,6 +31,7 @@ var parent_press_seconds := 0.0
 var last_drag_plot := -1
 var reset_confirmation := false
 var sound_nodes: Dictionary = {}
+var plant_art: Dictionary = {}
 var pointer_down := false
 var audio_files := {
     "seed": "res://assets/audio/seed.wav",
@@ -58,6 +60,12 @@ func _ready() -> void:
         p.volume_db = -14.0
         add_child(p)
         sound_nodes[key] = p
+    for art_name in ["seed", "sprout", "cosmos", "sunflower", "tulip", "daisy", "poppy", "bluebell"]:
+        var image: Texture2D = load("res://assets/art/" + art_name + ".svg") as Texture2D
+        if image != null:
+            plant_art[art_name] = image
+        else:
+            push_warning("Missing plant art: " + art_name)
     set_process(true)
     queue_redraw()
 
@@ -293,81 +301,134 @@ func _cloud(c: Vector2, scale: float = 1.0) -> void:
     _rounded(Rect2(c + Vector2(-46, 1) * scale, Vector2(102, 26) * scale), color, 12 * scale)
 
 
+
 func _paint_background() -> void:
-    draw_rect(Rect2(0, 0, 1280, 800), COLOR_SKY)
-    draw_circle(Vector2(1102, 112), 55, Color("ffedaf"))
-    _cloud(Vector2(228, 123), 1.0)
-    _cloud(Vector2(825, 90), 0.6)
-    draw_colored_polygon(PackedVector2Array([Vector2(0, 505), Vector2(135, 450), Vector2(320, 502), Vector2(575, 439), Vector2(843, 515), Vector2(1091, 457), Vector2(1280, 494), Vector2(1280, 800), Vector2(0, 800)]), Color("deebce"))
-    draw_colored_polygon(PackedVector2Array([Vector2(0, 635), Vector2(170, 586), Vector2(406, 652), Vector2(695, 603), Vector2(932, 657), Vector2(1280, 577), Vector2(1280, 800), Vector2(0, 800)]), COLOR_GROUND)
-    for i in range(22):
-        var x: float = float((i * 83 + 53) % 1240)
-        var y: float = float(677 + (i * 37) % 85)
-        draw_circle(Vector2(x, y), 3.0, Color("97bd85", 0.6))
+    # Original pastel storybook landscape; slow shapes, no flashing effects.
+    draw_rect(Rect2(0, 0, 1280, 800), Color("e9f7f1"))
+    draw_circle(Vector2(1093, 104), 84, Color("fff6d9", 0.72))
+    draw_circle(Vector2(1093, 104), 51, Color("ffe7aa", 0.75))
+    _cloud(Vector2(217, 112), 1.23)
+    _cloud(Vector2(810, 83), 0.79)
+    _cloud(Vector2(1071, 228), 0.50)
+    draw_colored_polygon(PackedVector2Array([
+        Vector2(0, 481), Vector2(139, 440), Vector2(291, 496), Vector2(470, 444),
+        Vector2(659, 482), Vector2(820, 439), Vector2(1017, 489),
+        Vector2(1169, 432), Vector2(1280, 469), Vector2(1280, 800), Vector2(0, 800)
+    ]), Color("dcefdc"))
+    draw_colored_polygon(PackedVector2Array([
+        Vector2(0, 615), Vector2(151, 564), Vector2(352, 631), Vector2(615, 573),
+        Vector2(822, 631), Vector2(1068, 576), Vector2(1280, 609),
+        Vector2(1280, 800), Vector2(0, 800)
+    ]), Color("cbe5c7"))
+    # Quiet grassy details, without scoring or reward decoration.
+    for j in range(26):
+        var p := Vector2(float((j * 83 + 37) % 1280), float(665 + (j * 31) % 115))
+        draw_line(p, p + Vector2(-5, -12), Color("82b68c", 0.66), 3, true)
+        draw_line(p, p + Vector2(5, -9), Color("93c49b", 0.63), 3, true)
+        if j % 4 == 0:
+            draw_circle(p + Vector2(1, -13), 5, Color("fff5d9", 0.94))
+            draw_circle(p + Vector2(1, -13), 2.2, Color("e4bc74"))
 
 
 func _draw_welcome() -> void:
-    _rounded(Rect2(184, 115, 914, 588), Color("ffffff", 0.75), 51)
-    _text("Little Wonder Garden", Vector2(640, 223), 56, COLOR_DARK, HORIZONTAL_ALIGNMENT_CENTER, 830)
-    _text("A quiet little world to grow", Vector2(640, 272), 27, COLOR_MUTED, HORIZONTAL_ALIGNMENT_CENTER, 800)
-    _draw_flower(Vector2(498, 455), 1.35, Color("f0a7b3"))
-    _draw_flower(Vector2(642, 469), 1.65, Color("f5d49a"))
-    _draw_flower(Vector2(786, 456), 1.30, Color("c6acdc"))
-    _rounded(Rect2(422, 569, 436, 111), Color("467e5c"), 32)
-    _text("Let's Play", Vector2(640, 639), 39, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 392)
-    _text("Plant • Water • Wonder", Vector2(640, 741), 19, COLOR_MUTED, HORIZONTAL_ALIGNMENT_CENTER, 570)
+    _rounded(Rect2(188, 125, 908, 574), Color("7ca28c", 0.16), 48)
+    _rounded(Rect2(180, 114, 908, 574), Color("fffdf5", 0.96), 48)
+    _rounded(Rect2(220, 147, 827, 52), Color("ecf6e9"), 24)
+    _text("A LITTLE PLACE TO GROW", Vector2(635, 181), 19, Color("648b72"), HORIZONTAL_ALIGNMENT_CENTER, 780)
+    _text("Little Wonder", Vector2(636, 256), 57, Color("315e49"), HORIZONTAL_ALIGNMENT_CENTER, 840)
+    _text("Garden", Vector2(636, 319), 64, Color("457953"), HORIZONTAL_ALIGNMENT_CENTER, 840)
+    _text("Plant a seed. Watch something lovely grow.", Vector2(636, 360), 24, Color("6b8872"), HORIZONTAL_ALIGNMENT_CENTER, 830)
+    _draw_plant_art("tulip", Rect2(327, 361, 162, 175))
+    _draw_plant_art("sunflower", Rect2(544, 357, 178, 188))
+    _draw_plant_art("cosmos", Rect2(779, 362, 157, 176))
+    _rounded(Rect2(424, 572, 436, 111), Color("294e3e", 0.22), 32)
+    _rounded(Rect2(422, 565, 436, 111), Color("417957"), 32)
+    _text("Let's play!", Vector2(640, 635), 38, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 390)
+    _text("No rush. No wrong answers.", Vector2(640, 734), 21, Color("507d63"), HORIZONTAL_ALIGNMENT_CENTER, 630)
 
 
 func _draw_garden() -> void:
-    _rounded(Rect2(24, 14, 1232, 106), Color("ffffff", 0.80), 34)
-    _text("Little Wonder Garden", Vector2(65, 76), 35, COLOR_DARK)
-    _text("Take your time. There is no wrong way to grow.", Vector2(67, 105), 18, COLOR_MUTED)
-    _rounded(Rect2(1160, 22, 92, 82), Color("f2eee3"), 26)
+    # Clear hierarchy: garden first, four tools at left, grown-up corner tucked away.
+    _rounded(Rect2(24, 20, 1232, 110), Color("7b9d81", 0.14), 29)
+    _rounded(Rect2(24, 14, 1232, 110), Color("fffdf6", 0.96), 29)
+    draw_circle(Vector2(72, 72), 24, Color("dbeedc"))
+    draw_circle(Vector2(64, 69), 9, Color("7eb68a"))
+    draw_circle(Vector2(78, 61), 9, Color("94c39b"))
+    draw_circle(Vector2(78, 79), 9, Color("77aa7c"))
+    _text("My Little Garden", Vector2(112, 72), 37, Color("315b48"))
+    _text("Every little flower grows in its own time.", Vector2(112, 103), 20, Color("6f8d78"))
+    _rounded(Rect2(1160, 22, 92, 82), Color("e7efe3"), 24)
     _draw_gear(Vector2(1206, 57))
     if parent_pressing:
         draw_arc(Vector2(1206, 57), 39, -PI/2, -PI/2 + TAU * minf(parent_press_seconds / 2.5, 1.0), 40, Color("4c8968"), 7.0, true)
-    _rounded(Rect2(267, 146, 966, 562), Color("fffdf6", 0.89), 34)
+    _rounded(Rect2(266, 153, 968, 562), Color("6f916e", 0.17), 33)
+    _rounded(Rect2(266, 146, 968, 562), Color("fffaf0", 0.96), 33)
+    _rounded(Rect2(282, 163, 930, 527), Color("f1f6df"), 28)
+    for j in range(15):
+        var gx := float(319 + ((j * 131) % 760))
+        var gy := float(190 + ((j * 77) % 458))
+        draw_circle(Vector2(gx, gy), 4, Color("c4d9ad", 0.45))
     for i in range(9):
         _draw_plot(i)
-    # Small pond, wholly decorative in this first MVP.
-    draw_circle(Vector2(1126, 527), 71, Color("b6ddd7"))
-    draw_circle(Vector2(1126, 527), 55, Color("8cc9cb"))
-    draw_arc(Vector2(1119, 533), 29, 0, TAU, 32, Color("d9eff0"), 2.2, true)
-    draw_circle(Vector2(1113, 516), 13, Color("6a9d75"))
-    draw_circle(Vector2(1162, 545), 11, Color("86ad7a"))
+    # Gentle interactive pond. Ripples oscillate only a few pixels.
+    draw_circle(Vector2(1126, 531), 74, Color("a5cbbb"))
+    draw_circle(Vector2(1126, 526), 68, Color("b8e1df"))
+    draw_circle(Vector2(1126, 526), 55, Color("8bcbd0"))
+    var ripple := sin(elapsed * 0.5) * 2.0
+    draw_arc(Vector2(1121, 527), 28 + ripple, 0, TAU, 40, Color("d8f3ee", 0.68), 2.4, true)
+    draw_circle(Vector2(1102, 516), 15, Color("72a57e"))
+    draw_circle(Vector2(1161, 543), 12, Color("8bbd8b"))
+    draw_circle(Vector2(1107, 514), 5, Color("f6d9bb"))
+    _draw_butterfly(Vector2(1117 + sin(elapsed * 0.4) * 2.0, 425), 0.75)
     _draw_button(Rect2(40, 186, 190, 100), "Plant", "seed", selected_tool == "seed")
     _draw_button(Rect2(40, 305, 190, 100), "Water", "water", selected_tool == "water")
     _draw_button(Rect2(40, 424, 190, 100), "Sound on" if sound_enabled else "Sound off", "sound", false)
     _draw_button(Rect2(40, 543, 190, 100), "Rest", "rest", false)
-    _rounded(Rect2(269, 720, 957, 59), Color("ffffff", 0.84), 23)
-    _text(message if message_seconds > 0.0 else "Choose a tool, then touch the garden.", Vector2(300, 760), 25, COLOR_MUTED)
-    _text("Hold for grown-ups", Vector2(1150, 123), 15, COLOR_MUTED, HORIZONTAL_ALIGNMENT_RIGHT, 254)
+    _rounded(Rect2(270, 722, 954, 57), Color("fffdf6", 0.93), 20)
+    _text(message if message_seconds > 0.0 else "Pick Plant or Water, then touch the garden.", Vector2(299, 758), 22, Color("5e806d"))
+    _text("Hold for grown-ups", Vector2(1136, 126), 15, Color("6b8872"), HORIZONTAL_ALIGNMENT_RIGHT, 245)
 
 
 func _draw_plot(i: int) -> void:
     var col := i % 3
     var row := i / 3
     var top := PLOT_START + Vector2(float(col), float(row)) * PLOT_STEP
-    var center := top + Vector2(101, 73)
-    _rounded(Rect2(top + Vector2(1, 8), PLOT_SIZE), Color("e9e5d5"), 25)
-    _rounded(Rect2(top, PLOT_SIZE), Color("e6c8a4"), 26)
-    _rounded(Rect2(top + Vector2(12, 10), PLOT_SIZE - Vector2(24, 26)), Color("bb916d"), 23)
-    for s in range(5):
-        var gx := top.x + 36 + float(s * 31)
-        var gy := top.y + 53 + float((s * 17 + i * 3) % 39)
-        draw_circle(Vector2(gx, gy), 2.0, Color("d5b696"))
-    var phase: float = sin(elapsed * 0.7 + float(i) * 0.8) * 1.7
-    if plots[i] == 1:
-        draw_circle(center + Vector2(0, 15), 10, Color("826043"))
-        draw_circle(center + Vector2(-3, 12), 3, Color("dfbd8b"))
-    elif plots[i] == 2:
-        _draw_sprout(center + Vector2(phase, 10))
-    elif plots[i] == 3:
-        var petals := [Color("edb5bd"), Color("f4d488"), Color("b6addd"), Color("f3c8ac"), Color("a6cebd")]
-        _draw_flower(center + Vector2(phase, 9), 0.78, petals[i % petals.size()])
+    var center := top + Vector2(101, 67)
+    _rounded(Rect2(top + Vector2(1, 9), PLOT_SIZE), Color("9eb29a", 0.28), 27)
+    _rounded(Rect2(top, PLOT_SIZE), Color("efdbb7"), 26)
+    _rounded(Rect2(top + Vector2(8, 8), PLOT_SIZE - Vector2(16, 15)), Color("d2a785"), 23)
+    _rounded(Rect2(top + Vector2(15, 14), PLOT_SIZE - Vector2(30, 29)), Color("9d775b"), 20)
+    # Friendly soil grains and an original storybook plant sprite.
+    for j in range(6):
+        var grain := Vector2(top.x + 33 + float(j * 27), top.y + 75 + float((i * 11 + j * 17) % 24))
+        draw_circle(grain, 2.5, Color("e8bd98", 0.75))
+    if plots[i] > 0:
+        var art_name := "seed" if plots[i] == 1 else "sprout" if plots[i] == 2 else FLOWER_ART[i % FLOWER_ART.size()]
+        var sway := sin(elapsed * 0.54 + float(i) * 0.71) * 1.6 if plots[i] == 3 else 0.0
+        _draw_plant_art(art_name, Rect2(center + Vector2(-67 + sway, -69), Vector2(134, 133)))
     else:
-        _line(center + Vector2(-18, 17), center + Vector2(-12, 9), Color("7da56b"), 3)
-        _line(center + Vector2(13, 16), center + Vector2(21, 10), Color("7da56b"), 3)
+        draw_line(center + Vector2(-16, 17), center + Vector2(-23, 8), Color("a8c89e"), 3, true)
+        draw_line(center + Vector2(-16, 17), center + Vector2(-7, 11), Color("a8c89e"), 3, true)
+        draw_circle(center + Vector2(13, 4), 3.5, Color("e6c6a0"))
+
+
+func _draw_plant_art(art_name: String, destination: Rect2) -> void:
+    if plant_art.has(art_name):
+        var sprite: Texture2D = plant_art[art_name]
+        draw_texture_rect(sprite, destination, false, Color.WHITE)
+    else:
+        # Fallback stays gentle if an art import is unavailable.
+        _draw_sprout(destination.get_center())
+
+
+func _draw_butterfly(center: Vector2, size: float) -> void:
+    draw_circle(center + Vector2(-11, -7) * size, 14 * size, Color("f7bdd0", 0.89))
+    draw_circle(center + Vector2(12, -7) * size, 14 * size, Color("f4c9da", 0.93))
+    draw_circle(center + Vector2(-9, 7) * size, 10 * size, Color("f0aebf", 0.91))
+    draw_circle(center + Vector2(9, 7) * size, 10 * size, Color("f0aebf", 0.91))
+    draw_line(center + Vector2(0, -8) * size, center + Vector2(0, 12) * size, Color("715c55"), 4 * size, true)
+    draw_line(center + Vector2(0, -8) * size, center + Vector2(-5, -17) * size, Color("715c55"), 2 * size, true)
+    draw_line(center + Vector2(0, -8) * size, center + Vector2(5, -17) * size, Color("715c55"), 2 * size, true)
 
 
 func _draw_sprout(c: Vector2) -> void:
@@ -390,32 +451,46 @@ func _draw_flower(c: Vector2, scale: float, petal_color: Color) -> void:
     draw_circle(head + Vector2(-4, -4) * scale, 3.2 * scale, Color("fff1bd"))
 
 
+
 func _draw_button(rect: Rect2, label: String, kind: String, active: bool) -> void:
-    _rounded(Rect2(rect.position + Vector2(0, 5), rect.size), Color("dce6db"), 24)
-    _rounded(rect, Color("d1e9d6") if active else Color("ffffff", 0.92), 24)
+    var surface := Color("e4f3dc") if active else Color("fffdf8")
+    var accent := Color("5c9c6f")
+    if kind == "water":
+        accent = Color("5a9fac")
+    elif kind == "sound":
+        accent = Color("9381b2")
+    elif kind == "rest":
+        accent = Color("c69d5f")
+    _rounded(Rect2(rect.position + Vector2(0, 6), rect.size), Color("638c70", 0.20), 25)
+    _rounded(rect, surface, 25)
+    _rounded(Rect2(rect.position + Vector2(10, 14), Vector2(68, 70)), Color("ebf4eb") if not active else Color("d1e6d0"), 21)
     if active:
-        _rounded(Rect2(rect.position + Vector2(7, 8), Vector2(7, rect.size.y - 16)), Color("559a70"), 3)
-    var p := rect.position + Vector2(51, 50)
+        _rounded(Rect2(rect.position + Vector2(4, 15), Vector2(6, 69)), Color("5d9f6d"), 3)
+    var p := rect.position + Vector2(45, 49)
     match kind:
         "seed":
-            draw_circle(p, 17, Color("9f7652"))
-            draw_circle(p + Vector2(-5, -5), 5, Color("cfaa85"))
-            _line(p + Vector2(9, -14), p + Vector2(16, -23), Color("619b67"), 4)
+            draw_circle(p + Vector2(-2, 5), 16, Color("956d4a"))
+            draw_circle(p + Vector2(-8, -1), 5, Color("d7ad7a"))
+            draw_line(p + Vector2(7, -7), p + Vector2(19, -24), Color("518d60"), 5, true)
+            draw_circle(p + Vector2(22, -24), 8, Color("86bf8e"))
         "water":
-            _rounded(Rect2(p + Vector2(-17, -12), Vector2(29, 28)), COLOR_WATER, 6)
-            _line(p + Vector2(9, -12), p + Vector2(27, -21), COLOR_WATER, 6)
-            draw_arc(p + Vector2(15, 3), 13, -PI/2, PI/2, 16, COLOR_WATER, 5, true)
+            _rounded(Rect2(p + Vector2(-20, -13), Vector2(36, 32)), Color("78c2ce"), 8)
+            draw_line(p + Vector2(9, -9), p + Vector2(22, -21), Color("5a9fac"), 5, true)
+            draw_arc(p + Vector2(13, 5), 14, -PI/2, PI/2, 18, Color("5a9fac"), 5.0, true)
+            draw_circle(p + Vector2(24, -21), 3, Color("9dd8dd"))
         "sound":
-            draw_colored_polygon(PackedVector2Array([p + Vector2(-19, -8), p + Vector2(-8, -8), p + Vector2(5, -19), p + Vector2(5, 18), p + Vector2(-8, 8), p + Vector2(-19, 8)]), COLOR_GREEN)
+            draw_colored_polygon(PackedVector2Array([
+                p + Vector2(-21,-9),p + Vector2(-9,-9),p + Vector2(6,-21),
+                p + Vector2(6,19),p + Vector2(-9,9),p + Vector2(-21,9)
+            ]), accent)
             if sound_enabled:
-                draw_arc(p + Vector2(5, 0), 19, -PI/3, PI/3, 18, COLOR_GREEN, 3, true)
+                draw_arc(p + Vector2(8,0), 20, -PI/3, PI/3, 18, accent, 3, true)
             else:
-                _line(p + Vector2(15, -17), p + Vector2(26, 14), Color("c48b7d"), 4)
+                draw_line(p + Vector2(16,-16), p + Vector2(27,15), Color("c78f8b"), 4, true)
         "rest":
-            draw_circle(p, 22, Color("e9cf94"))
-            draw_circle(p + Vector2(12, -10), 20, Color.WHITE)
-    _text(label, rect.position + Vector2(88, 62), 21, COLOR_DARK)
-
+            draw_circle(p, 23, Color("efcb81"))
+            draw_circle(p + Vector2(11,-9), 21, Color("ebf4eb") if not active else Color("d1e6d0"))
+    _text(label, rect.position + Vector2(90, 61), 21, Color("3f6355"))
 
 func _draw_gear(c: Vector2) -> void:
     draw_arc(c, 22, 0, TAU, 32, COLOR_MUTED, 7, true)
