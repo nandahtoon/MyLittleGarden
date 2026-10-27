@@ -1,0 +1,54 @@
+name: Godot headless smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  godot-import-and-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Godot editor
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.4.1
+          use-dotnet: false
+          include-templates: false
+
+      - name: Import project and parse GDScript
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --version
+          godot --headless --path . --import 2>&1 | tee godot-import.log
+
+      - name: Run main scene in headless mode for a few frames
+        shell: bash
+        run: |
+          set -o pipefail
+          godot --headless --path . --quit-after 5 2>&1 | tee godot-smoke.log
+
+      - name: Fail on Godot script errors
+        shell: bash
+        run: |
+          if grep -Ein 'SCRIPT ERROR|Parse Error|Parser Error|Invalid call|Invalid get index' godot-import.log godot-smoke.log; then
+            echo 'Godot reported a script or runtime error'
+            exit 1
+          fi
+
+      - name: Save validation logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot-headless-logs
+          path: |
+            godot-import.log
+            godot-smoke.log
+          if-no-files-found: ignore
