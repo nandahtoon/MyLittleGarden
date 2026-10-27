@@ -82,6 +82,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Godot 4.4 defaults Android Swappy frame pacing ON.
+          # Some emulator configurations render blank/crash with it; test workaround only.
+          # See https://github.com/godotengine/godot/issues/121035
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("project.godot")
+          t = p.read_text()
+          assert "[display]" in t
+          t = t.replace("[display]", "[display]\nwindow/frame_pacing/android/enable_frame_pacing=false", 1)
+          p.write_text(t)
+          PY
           # CI-only instrumentation diagnoses whether the Godot Node2D draw callback executes.
           # It never edits the canonical source or production APK workflow.
           python3 - <<'PY'
