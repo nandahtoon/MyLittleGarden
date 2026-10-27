@@ -1,0 +1,95 @@
+name: Android debug APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/android-debug.yml"
+      - "export_presets.cfg"
+      - "project.godot"
+      - "scenes/**"
+      - "scripts/**"
+      - "assets/**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout canonical source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install SDK components for Godot 4.4
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager --install "platform-tools" "build-tools;34.0.0" "platforms;android-34"
+
+      - name: Install Godot 4.4.1 with matching export templates
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.4.1
+          use-dotnet: false
+          include-templates: true
+
+      - name: Import project
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --version
+          godot --headless --path . --import
+
+      - name: Configure ephemeral Android paths and debug key
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "${ANDROID_SDK_ROOT}"
+          test -x "${JAVA_HOME}/bin/keytool"
+          mkdir -p "${HOME}/.config/godot"
+          cat > "${HOME}/.config/godot/editor_settings-4.4.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/java_sdk_path = "${JAVA_HOME}"
+          export/android/android_sdk_path = "${ANDROID_SDK_ROOT}"
+          EOF
+          keytool -genkeypair -noprompt -keystore "${RUNNER_TEMP}/mylittlegarden-debug.keystore" -alias androiddebugkey -storepass android -keypass android -dname "CN=Android Debug,O=MyLittleGarden,C=US" -keyalg RSA -keysize 2048 -validity 365
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=${RUNNER_TEMP}/mylittlegarden-debug.keystore" >> "${GITHUB_ENV}"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> "${GITHUB_ENV}"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> "${GITHUB_ENV}"
+
+      - name: Export installable debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          godot --headless --path . --export-debug Android build/LittleWonderGarden-debug.apk 2>&1 | tee build/android-export.log
+          test -s build/LittleWonderGarden-debug.apk
+          unzip -t build/LittleWonderGarden-debug.apk | tail -1
+          "${ANDROID_SDK_ROOT}/build-tools/34.0.0/aapt" dump badging build/LittleWonderGarden-debug.apk | grep -m1 '^package:'
+          sha256sum build/LittleWonderGarden-debug.apk | tee build/LittleWonderGarden-debug.apk.sha256
+
+      - name: Upload APK for supervised tablet testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: LittleWonderGarden-Android-debug-APK
+          path: |
+            build/LittleWonderGarden-debug.apk
+            build/LittleWonderGarden-debug.apk.sha256
+            build/android-export.log
+          if-no-files-found: error
+          retention-days: 14
