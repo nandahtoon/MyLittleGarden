@@ -1,0 +1,151 @@
+name: Android emulator smoke
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/android-emulator.yml"
+      - "tools/emulator_smoke.py"
+      - "project.godot"
+      - "scenes/**"
+      - "scripts/**"
+      - "assets/**"
+      - "export_presets.cfg"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  emulator-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install screenshot preview tooling
+        run: python3 -m pip install --user Pillow==11.3.0
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager --install "platform-tools" "build-tools;34.0.0" "platforms;android-34"
+
+      # Isolated engine-version diagnostic: production Android build stays pinned to 4.4.1.
+      - name: Install Godot editor and export templates
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.2
+          use-dotnet: false
+          include-templates: true
+
+      - name: Configure emulator-only x86_64 APK build
+        shell: bash
+        run: |
+          set -euo pipefail
+          # CI-only ABI change; production Android export preset stays ARM-oriented.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("export_presets.cfg")
+          text = p.read_text()
+          for before, after in [
+            ("architectures/armeabi-v7a=true", "architectures/armeabi-v7a=false"),
+            ("architectures/arm64-v8a=true", "architectures/arm64-v8a=false"),
+            ("architectures/x86_64=false", "architectures/x86_64=true"),
+          ]:
+            assert before in text, f"Expected preset setting missing: {before}"
+            text = text.replace(before, after)
+          p.write_text(text)
+          PY
+          mkdir -p "$HOME/.config/godot" build
+          cat > "$HOME/.config/godot/editor_settings-4.7.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/java_sdk_path = "${JAVA_HOME}"
+          export/android/android_sdk_path = "${ANDROID_SDK_ROOT}"
+          EOF
+          keytool -genkeypair -noprompt -keystore "${RUNNER_TEMP}/lwg-emulator-debug.keystore" -alias androiddebugkey -storepass android -keypass android -dname "CN=Android CI,O=MyLittleGarden,C=US" -keyalg RSA -keysize 2048 -validity 365
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=${RUNNER_TEMP}/lwg-emulator-debug.keystore" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> "$GITHUB_ENV"
+
+      - name: Import and export emulator APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Godot 4.4 defaults Android Swappy frame pacing ON.
+          # Some emulator configurations render blank/crash with it; test workaround only.
+          # See https://github.com/godotengine/godot/issues/121035
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("project.godot")
+          t = p.read_text()
+          assert "[display]" in t
+          t = t.replace("[display]", "[display]\nwindow/frame_pacing/android/enable_frame_pacing=false", 1)
+          p.write_text(t)
+          PY
+          # CI-only instrumentation diagnoses whether the Godot Node2D draw callback executes.
+          # It never edits the canonical source or production APK workflow.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("scripts/garden_game.gd")
+          s = p.read_text()
+          assert "func _ready() -> void:" in s and "func _draw() -> void:" in s
+          s = s.replace("func _ready() -> void:",
+                        'func _ready() -> void:\n    print("LWG_CI_READY")', 1)
+          s = s.replace("func _draw() -> void:",
+                        'var _ci_last_screen := ""\n\nfunc _draw() -> void:\n    if _ci_last_screen != screen:\n        _ci_last_screen = screen\n        print("LWG_CI_DRAW_SCREEN:", screen, " canvas:", get_viewport_rect().size)', 1)
+          s = s.replace('    last_drag_plot = -1\n    if screen == "garden" and',
+                        '    last_drag_plot = -1\n    print("LWG_CI_PRESS:", p, "screen:", screen)\n    if screen == "garden" and', 1)
+          s = s.replace('        parent_pressing = true\n        parent_press_seconds = 0.0',
+                        '        print("LWG_CI_GEAR_HIT:", p)\n        parent_pressing = true\n        parent_press_seconds = 0.0', 1)
+          s = s.replace('                screen = "parent"\n                parent_pressing = false',
+                        '                print("LWG_CI_PARENT_OPEN")\n                screen = "parent"\n                parent_pressing = false', 1)
+          p.write_text(s)
+          PY
+          godot --headless --path . --import 2>&1 | tee build/emulator-import.log
+          godot --headless --path . --export-debug Android build/LittleWonderGarden-emulator-debug.apk 2>&1 | tee build/emulator-export.log
+          test -s build/LittleWonderGarden-emulator-debug.apk
+          unzip -t build/LittleWonderGarden-emulator-debug.apk | tail -1
+          "${ANDROID_SDK_ROOT}/build-tools/34.0.0/aapt" dump badging build/LittleWonderGarden-emulator-debug.apk | grep -m1 '^package:'
+          unzip -l build/LittleWonderGarden-emulator-debug.apk | grep 'lib/x86_64/'
+
+      - name: Enable KVM permissions
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Boot Android 14 emulator and exercise UI using ADB
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          emulator-options: -no-window -gpu swangle -feature -Vulkan -no-snapshot -noaudio -no-boot-anim -camera-back none
+          emulator-boot-timeout: 600
+          script: python3 tools/emulator_smoke.py
+
+      - name: Upload emulator screenshots and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LittleWonderGarden-Android-emulator-QA
+          path: |
+            build/emulator-evidence/**
+            build/emulator-import.log
+            build/emulator-export.log
+          if-no-files-found: ignore
+          retention-days: 14
