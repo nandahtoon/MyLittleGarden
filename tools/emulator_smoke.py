@@ -28,6 +28,26 @@ def adb(*args: str, timeout: int = 35, check: bool = True, binary: bool = False)
     return result.stdout if binary else result.stdout.decode(errors="replace").strip()
 
 
+def wait_for_garden_pixels(label: str, seconds: int = 18):
+    """A Godot splash, Android home screen or flat grey canvas cannot pass visual QA."""
+    from PIL import Image
+    for i in range(seconds):
+        data = adb("exec-out", "screencap", "-p", binary=True, timeout=40)
+        if data[:8] == b"\\x89PNG\\r\\n\\x1a\\n":
+            picture = Image.open(BytesIO(data)).convert("RGB")
+            w, h = picture.size
+            area = picture.crop((int(w*.15), int(h*.14), int(w*.85), int(h*.82)))
+            tiny = list(area.resize((48, 30)).getdata())
+            brightness = sum(sum(pixel) / 3 for pixel in tiny) / len(tiny)
+            distinct = len(set(tiny))
+            print(f"FRAME_WAIT {label} #{i+1}: brightness={brightness:.1f} distinct={distinct}", flush=True)
+            if brightness > 135 and distinct > 18:
+                return
+        time.sleep(1)
+    dump_app_diagnostics(f"{label} remained splash or blank grey instead of rendered game")
+    raise AssertionError(f"{label} never produced a bright, illustrated Godot frame")
+
+
 def screenshot(name: str):
     data = adb("exec-out", "screencap", "-p", binary=True, timeout=60)
     if len(data) < 24 or data[:8] != b"\x89PNG\r\n\x1a\n":
@@ -41,7 +61,7 @@ def screenshot(name: str):
         field = im.crop((int(w*.10), int(h*.10), int(w*.90), int(h*.83)))
         unique = len(set(field.resize((48, 28)).getdata()))
         print(f"VISUAL_CHECK {name}: center color samples={unique}", flush=True)
-        if name == "01-welcome" and unique < 16:
+        if unique < 16:
             raise AssertionError("Emulator displays a nearly blank scene; reject visual QA even if touch/save works")
     except ImportError:
         print("No Pillow visual check available", flush=True)
@@ -66,7 +86,7 @@ def tap(x: int, y: int):
 def activity_snapshot():
     activity = adb("shell", "dumpsys", "activity", "activities", check=False)
     window = adb("shell", "dumpsys", "window", "windows", check=False)
-    relevant = [line.strip() for line in (activity + "\\n" + window).splitlines()
+    relevant = [line.strip() for line in (activity + "\n" + window).splitlines()
                 if "topResumedActivity=" in line or "mCurrentFocus=" in line
                 or "mFocusedApp=" in line or "mTopFocusedDisplayId" in line]
     return relevant[:18]
@@ -77,11 +97,11 @@ def dump_app_diagnostics(reason: str):
     (OUT / "logcat.txt").write_text(logs[-700_000:], encoding="utf-8")
     terms = ("godot", PKG.lower(), "fatal exception", "fatal signal",
              "am_crash", "force finishing", "process died", "surfaceflinger",
-             "egl_bad", "libc  :", "abort message", "renderer")
+             "egl_bad", "libc  :", "abort message", "renderer", "lwg_ci_", "shader", "egl", "gles")
     filtered = [line for line in logs.splitlines() if any(t in line.lower() for t in terms)]
     print("DIAGNOSTIC", reason, "PID", adb("shell", "pidof", PKG, check=False), flush=True)
     print("DIAGNOSTIC activity", activity_snapshot(), flush=True)
-    print("DIAGNOSTIC filtered_logcat", "\\n".join(filtered[-120:])[-26000:], flush=True)
+    print("DIAGNOSTIC filtered_logcat", "\n".join(filtered[-120:])[-26000:], flush=True)
 
 
 def start():
@@ -154,6 +174,7 @@ def main():
     print("Start main launcher", flush=True)
     start()
     print("FOCUS", activity_snapshot(), flush=True)
+    wait_for_garden_pixels("Welcome")
     w, h = screenshot("01-welcome")
     expect(w > h, "app is in landscape presentation")
     # Design is 1280x800. Android bars/insets are small; taps target generous hit areas.
@@ -162,6 +183,7 @@ def main():
     def design_tap(x: int, y: int):
         tap(int(x*fx), int(y*fy))
     design_tap(640, 618)  # Welcome -> Garden
+    wait_for_garden_pixels("Garden")
     screenshot("02-garden-empty")
     # Require the Garden to render differently from Welcome; a home/blank frame is not gameplay evidence.
     from PIL import Image, ImageChops
@@ -193,6 +215,7 @@ def main():
     adb("shell", "am", "force-stop", PKG)
     time.sleep(1)
     start()
+    wait_for_garden_pixels("Restarted welcome")
     screenshot("05-restarted")
     restored = saved_state()
     expect(restored["plots"][0] == 3 and restored["sound_enabled"] is False,
@@ -221,6 +244,7 @@ def main():
     screenshot("09-parent-after-reset")
 
     check_crashes()
+    dump_app_diagnostics("Completed emulator QA")
     summary = {
         "platform": "Android emulator API 34 x86_64",
         "viewport": [w, h],
