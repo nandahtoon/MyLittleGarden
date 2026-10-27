@@ -105,6 +105,12 @@ jobs:
                         'func _ready() -> void:\n    print("LWG_CI_READY")', 1)
           s = s.replace("func _draw() -> void:",
                         'var _ci_last_screen := ""\n\nfunc _draw() -> void:\n    if _ci_last_screen != screen:\n        _ci_last_screen = screen\n        print("LWG_CI_DRAW_SCREEN:", screen, " canvas:", get_viewport_rect().size)', 1)
+          s = s.replace('    last_drag_plot = -1\n    if screen == "garden" and',
+                        '    last_drag_plot = -1\n    print("LWG_CI_PRESS:", p, "screen:", screen)\n    if screen == "garden" and', 1)
+          s = s.replace('        parent_pressing = true\n        parent_press_seconds = 0.0',
+                        '        print("LWG_CI_GEAR_HIT:", p)\n        parent_pressing = true\n        parent_press_seconds = 0.0', 1)
+          s = s.replace('                screen = "parent"\n                parent_pressing = false',
+                        '                print("LWG_CI_PARENT_OPEN")\n                screen = "parent"\n                parent_pressing = false', 1)
           p.write_text(s)
           PY
           godot --headless --path . --import 2>&1 | tee build/emulator-import.log
