@@ -261,6 +261,8 @@ def main():
             opened = True
             break
     screenshot("08-parent")
+    if not opened:
+        dump_app_diagnostics("Parent long-press did not open settings")
     expect(opened, "grown-up corner visibly opens after long press")
     design_tap(600, 433)  # Parent: break interval 10->15
     settings = saved_state()
