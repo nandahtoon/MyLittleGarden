@@ -72,8 +72,12 @@ assert '\"version\": 1' in save
 for relative in ("AGENTS.md", "README.md"):
     src = (ROOT / relative).read_text(encoding="utf-8")
     assert "docs/START_HERE.md" in src, f"{relative} must link to handoff entry point"
-for relative in ("docs/START_HERE.md", "docs/GAME_DESIGN.md", "docs/SCREEN_FLOW.md"):
+# The handoff defines repository ownership; the design docs are not
+# required to repeat the Git branch name (a brittle and meaningless assertion).
+handoff = (ROOT / "docs/START_HERE.md").read_text(encoding="utf-8")
+assert "origin/main" in handoff
+for relative in ("docs/GAME_DESIGN.md", "docs/SCREEN_FLOW.md"):
     src = (ROOT / relative).read_text(encoding="utf-8")
-    assert "origin/main" in src or "main" in src
+    assert "SCREEN_FLOW" in src or "screen-flow.v1.json" in src, relative
 print("PASS: handoff docs and MVP machine flow contract match declared source boundaries")
 print("NOTE: static check only — no runtime rendering, parent gesture or physical-device claims")
