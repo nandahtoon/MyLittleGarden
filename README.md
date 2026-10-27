@@ -76,4 +76,6 @@ LittleWonderGarden/
 See [DESIGN.md](docs/DESIGN.md) for module ownership, acceptance criteria, touch input behavior, polish backlog, safety and QA matrix.
 ## Storybook art direction (v1 polish)
 
+Browse the [original illustrated flower gallery](docs/ART_DIRECTION.md) to preview source assets; it is **not** a game-device screenshot.
+
 The Garden and Welcome views now use local, original SVG art for seed, sprout and six flower types (cosmos, sunflower, tulip, daisy, poppy and bluebell). SVGs are kept as editable source under `assets/art/`. Each flower has a different appearance without loot, points or random reward mechanics. The larger pastel panels, improved soil beds, and subtle pond/butterfly decoration preserve the existing hit areas, offline-only save contract, break prompts, and parent settings. No downloaded assets or copyrighted character art are used.
