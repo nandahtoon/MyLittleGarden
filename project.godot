@@ -1,0 +1,26 @@
+; Little Wonder Garden — Godot 4 project
+config_version=5
+
+[application]
+config/name="Little Wonder Garden"
+run/main_scene="res://scenes/main.tscn"
+config/description="Offline, gentle, no-score garden play for young children"
+run/max_fps=30
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=800
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=0
+
+[input_devices]
+pointing/emulate_mouse_from_touch=false
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+
+[physics]
+2d/default_gravity=0.0

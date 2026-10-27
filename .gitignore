@@ -1,0 +1,23 @@
+# Godot derived imports/editor cache
+.godot/
+.import/
+*.tmp
+# exports and signing/private keys
+build/
+dist/
+exports/
+*.apk
+*.aab
+*.ipa
+*.p12
+*.mobileprovision
+*.keystore
+*.jks
+*.key
+.env
+.env.*
+! .env.example
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
