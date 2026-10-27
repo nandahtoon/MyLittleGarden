@@ -2,6 +2,8 @@
 """ADB-driven synthetic emulator smoke test; no child data or real identifiers."""
 from __future__ import annotations
 
+import base64
+from io import BytesIO
 import json
 import os
 from pathlib import Path
@@ -33,6 +35,16 @@ def screenshot(name: str):
     w, h = struct.unpack(">II", data[16:24])
     (OUT / f"{name}.png").write_bytes(data)
     print(f"Screenshot {name}: {w}x{h}, {len(data)} bytes", flush=True)
+    # Encode a low-resolution preview in CI logs for remote visual diagnosis.
+    try:
+        from PIL import Image
+        preview = BytesIO()
+        Image.open(BytesIO(data)).convert("RGB").resize((480, 300)).save(
+            preview, format="JPEG", quality=38, optimize=True
+        )
+        print(f"QA_IMAGE {name} {base64.b64encode(preview.getvalue()).decode()}", flush=True)
+    except ImportError:
+        print("Pillow not installed; full screenshots remain in CI artifact", flush=True)
     return w, h
 
 
@@ -51,6 +63,11 @@ def saved_state():
     paths = adb("shell", "run-as", PKG, "find", ".", "-name", "little_wonder_garden.json")
     candidates = [p.strip() for p in paths.splitlines() if p.strip().endswith("little_wonder_garden.json")]
     if not candidates:
+        print("DIAGNOSTIC run-as file tree:", adb("shell", "run-as", PKG, "find", ".", "-maxdepth", "6", "-type", "f", check=False)[:4000], flush=True)
+        print("DIAGNOSTIC external files:", adb("shell", "ls", "-la", f"/sdcard/Android/data/{PKG}/files", check=False)[:1500], flush=True)
+        print("DIAGNOSTIC app PID:", adb("shell", "pidof", PKG, check=False), flush=True)
+        print("DIAGNOSTIC activity:", adb("shell", "dumpsys", "activity", "activities", check=False)[-2500:], flush=True)
+        print("DIAGNOSTIC logcat recent:", adb("logcat", "-d", "-t", "300", check=False)[-9000:], flush=True)
         raise AssertionError("Godot local save file not found (touch not received, or file not persisted)")
     raw = adb("shell", "run-as", PKG, "cat", candidates[0])
     state = json.loads(raw)
@@ -85,6 +102,7 @@ def main():
     print(adb("install", "-r", APK, timeout=180), flush=True)
     print("Start main launcher", flush=True)
     start()
+    print("FOCUS", adb("shell", "dumpsys", "window", "windows", check=False)[-1400:], flush=True)
     w, h = screenshot("01-welcome")
     expect(w > h, "app is in landscape presentation")
     # Design is 1280x800. Android bars/insets are small; taps target generous hit areas.
