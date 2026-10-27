@@ -500,28 +500,37 @@ func _draw_gear(c: Vector2) -> void:
         _line(c + Vector2(cos(a), sin(a)) * 25, c + Vector2(cos(a), sin(a)) * 33, COLOR_MUTED, 6)
 
 
+
 func _draw_rest() -> void:
-    _rounded(Rect2(265, 127, 750, 585), Color("fffdf5", 0.94), 48)
-    draw_circle(Vector2(643, 345), 93, Color("f4dfad"))
-    draw_circle(Vector2(683, 307), 83, Color("fffdf5"))
-    _text("A little garden rest", Vector2(640, 204), 43, COLOR_DARK, HORIZONTAL_ALIGNMENT_CENTER, 700)
-    _text("Stretch, breathe, or look outside.", Vector2(640, 468), 30, COLOR_MUTED, HORIZONTAL_ALIGNMENT_CENTER, 700)
-    _text("Your garden will be here when you return.", Vector2(640, 512), 23, COLOR_MUTED, HORIZONTAL_ALIGNMENT_CENTER, 700)
-    _rounded(Rect2(424, 554, 434, 103), Color("467e5c"), 28)
-    _text("Back to Garden", Vector2(640, 621), 34, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 420)
+    _rounded(Rect2(265, 136, 750, 585), Color("89a48a", 0.18), 46)
+    _rounded(Rect2(265, 127, 750, 585), Color("fffdf6", 0.97), 46)
+    _rounded(Rect2(348, 165, 580, 57), Color("edf5e5"), 24)
+    _text("TIME FOR A LITTLE REST", Vector2(641, 200), 19, Color("6a9174"), HORIZONTAL_ALIGNMENT_CENTER, 580)
+    draw_circle(Vector2(640, 329), 101, Color("f7e8bb"))
+    draw_circle(Vector2(640, 325), 75, Color("efd197"))
+    draw_circle(Vector2(674, 297), 73, Color("fffdf6"))
+    _draw_plant_art("daisy", Rect2(394, 319, 144, 154))
+    _draw_plant_art("bluebell", Rect2(765, 326, 130, 141))
+    _text("Your garden is resting", Vector2(640, 484), 36, Color("365f4b"), HORIZONTAL_ALIGNMENT_CENTER, 710)
+    _text("Stretch, breathe, or look outside.", Vector2(640, 521), 24, Color("6b8872"), HORIZONTAL_ALIGNMENT_CENTER, 700)
+    _rounded(Rect2(424, 560, 434, 103), Color("2f624d", 0.19), 28)
+    _rounded(Rect2(424, 554, 434, 103), Color("477d5c"), 28)
+    _text("Back to Garden", Vector2(640, 621), 33, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 420)
 
 
 func _draw_parent() -> void:
-    _rounded(Rect2(329, 119, 622, 571), Color("fffdf5"), 38)
-    _text("Grown-up Corner", Vector2(640, 187), 43, COLOR_DARK, HORIZONTAL_ALIGNMENT_CENTER, 580)
-    _text("Keep play gentle and comfortable.", Vector2(640, 215), 19, COLOR_MUTED, HORIZONTAL_ALIGNMENT_CENTER, 580)
+    _rounded(Rect2(329, 127, 622, 572), Color("648f79", 0.20), 37)
+    _rounded(Rect2(329, 119, 622, 571), Color("fffdf6"), 37)
+    _rounded(Rect2(370, 144, 539, 63), Color("e9f3e8"), 23)
+    _text("Grown-up Corner", Vector2(640, 188), 39, Color("365f4b"), HORIZONTAL_ALIGNMENT_CENTER, 540)
+    _text("Make the garden comfortable for your child.", Vector2(640, 224), 19, Color("718b78"), HORIZONTAL_ALIGNMENT_CENTER, 600)
     _parent_option(Rect2(403, 231, 474, 69), "Soft sound", "On" if sound_enabled else "Off")
     _parent_option(Rect2(403, 314, 474, 69), "Gentle break reminder", "On" if breaks_enabled else "Off")
     _parent_option(Rect2(403, 397, 474, 69), "Break reminder", str(break_minutes) + " min")
     _parent_option(Rect2(403, 480, 474, 55), "Clear saved garden", "Tap again" if reset_confirmation else "Reset")
-    _rounded(Rect2(464, 555, 350, 89), Color("467e5c"), 25)
+    _rounded(Rect2(464, 561, 350, 89), Color("2f624d", 0.19), 25)
+    _rounded(Rect2(464, 555, 350, 89), Color("477d5c"), 25)
     _text("Done", Vector2(638, 612), 32, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, 325)
-
 
 func _parent_option(r: Rect2, title: String, value: String) -> void:
     _rounded(r, Color("e8f2e7"), 17)
