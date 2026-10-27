@@ -63,9 +63,50 @@ def tap(x: int, y: int):
     time.sleep(0.8)
 
 
+def activity_snapshot():
+    activity = adb("shell", "dumpsys", "activity", "activities", check=False)
+    window = adb("shell", "dumpsys", "window", "windows", check=False)
+    relevant = [line.strip() for line in (activity + "\\n" + window).splitlines()
+                if "topResumedActivity=" in line or "mCurrentFocus=" in line
+                or "mFocusedApp=" in line or "mTopFocusedDisplayId" in line]
+    return relevant[:18]
+
+
+def dump_app_diagnostics(reason: str):
+    logs = adb("logcat", "-d", "-v", "brief", timeout=50, check=False)
+    (OUT / "logcat.txt").write_text(logs[-700_000:], encoding="utf-8")
+    terms = ("godot", PKG.lower(), "fatal exception", "fatal signal",
+             "am_crash", "force finishing", "process died", "surfaceflinger",
+             "egl_bad", "libc  :", "abort message", "renderer")
+    filtered = [line for line in logs.splitlines() if any(t in line.lower() for t in terms)]
+    print("DIAGNOSTIC", reason, "PID", adb("shell", "pidof", PKG, check=False), flush=True)
+    print("DIAGNOSTIC activity", activity_snapshot(), flush=True)
+    print("DIAGNOSTIC filtered_logcat", "\\n".join(filtered[-120:])[-26000:], flush=True)
+
+
 def start():
-    adb("shell", "monkey", "-p", PKG, "-c", "android.intent.category.LAUNCHER", "1", timeout=35)
-    time.sleep(6)
+    # Launch deterministically: monkey may report success while leaving Launcher visible.
+    resolved = adb("shell", "cmd", "package", "resolve-activity", "--brief",
+                   "-a", "android.intent.action.MAIN",
+                   "-c", "android.intent.category.LAUNCHER", PKG, check=False)
+    print("LAUNCHER_ACTIVITY", resolved, flush=True)
+    result = adb("shell", "am", "start", "-W",
+                 "-a", "android.intent.action.MAIN",
+                 "-c", "android.intent.category.LAUNCHER",
+                 "-p", PKG, timeout=65, check=False)
+    print("LAUNCH_RESULT", result, flush=True)
+    ready = False
+    for _ in range(18):
+        time.sleep(1)
+        proc = adb("shell", "pidof", PKG, check=False)
+        focused = activity_snapshot()
+        if proc and any(PKG in line for line in focused):
+            ready = True
+            print("APP_READY", proc, focused, flush=True)
+            break
+    if not ready:
+        dump_app_diagnostics("App failed to become foreground after launch")
+        raise AssertionError("Godot Android activity did not remain in foreground; screenshots not valid")
 
 
 def saved_state():
@@ -77,7 +118,7 @@ def saved_state():
         print("DIAGNOSTIC external files:", adb("shell", "ls", "-la", f"/sdcard/Android/data/{PKG}/files", check=False)[:1500], flush=True)
         print("DIAGNOSTIC app PID:", adb("shell", "pidof", PKG, check=False), flush=True)
         print("DIAGNOSTIC activity:", adb("shell", "dumpsys", "activity", "activities", check=False)[-2500:], flush=True)
-        print("DIAGNOSTIC logcat recent:", adb("logcat", "-d", "-t", "300", check=False)[-9000:], flush=True)
+        dump_app_diagnostics("Save file missing")
         raise AssertionError("Godot local save file not found (touch not received, or file not persisted)")
     raw = adb("shell", "run-as", PKG, "cat", candidates[0])
     state = json.loads(raw)
@@ -112,7 +153,7 @@ def main():
     print(adb("install", "-r", APK, timeout=180), flush=True)
     print("Start main launcher", flush=True)
     start()
-    print("FOCUS", adb("shell", "dumpsys", "window", "windows", check=False)[-1400:], flush=True)
+    print("FOCUS", activity_snapshot(), flush=True)
     w, h = screenshot("01-welcome")
     expect(w > h, "app is in landscape presentation")
     # Design is 1280x800. Android bars/insets are small; taps target generous hit areas.
@@ -122,6 +163,12 @@ def main():
         tap(int(x*fx), int(y*fy))
     design_tap(640, 618)  # Welcome -> Garden
     screenshot("02-garden-empty")
+    # Require the Garden to render differently from Welcome; a home/blank frame is not gameplay evidence.
+    from PIL import Image, ImageChops
+    a = Image.open(OUT / "01-welcome.png").convert("RGB").resize((128, 80))
+    b = Image.open(OUT / "02-garden-empty.png").convert("RGB").resize((128, 80))
+    bounds = ImageChops.difference(a, b).getbbox()
+    expect(bounds is not None, "Welcome and Garden visuals actually differ")
 
     # A tap should persist a stage-1 seed.
     design_tap(412, 242)
@@ -158,8 +205,8 @@ def main():
     design_tap(640, 600)  # Rest -> Garden
 
     # Hold top-right gear for 2.5s to enter grown-up corner.
-    adb("shell", "input", "swipe", str(int(1155*fx)), str(int(83*fy)),
-        str(int(1155*fx)), str(int(83*fy)), "3200", timeout=20)
+    adb("shell", "input", "swipe", str(int(1205*fx)), str(int(64*fy)),
+        str(int(1205*fx)), str(int(64*fy)), "3200", timeout=20)
     time.sleep(1)
     screenshot("08-parent")
     design_tap(600, 433)  # Parent: break interval 10->15
