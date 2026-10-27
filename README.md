@@ -2,7 +2,7 @@
 
 **Cross-platform Godot 4.x starter game for Android tablets and Apple iPads.**
 
-This is an **original source-code MVP prototype**, not an already exported APK/IPA. It uses the Godot engine to compile genuine installed apps (not a webview). There are **no plugins, third-party SDKs, ads, logins, analytics, trackers, or network calls**. The garden save file stays on the device. All illustration is drawn using built-in 2D primitives, and sound effects are bundled as generated WAV files.
+This is an **original source-code MVP prototype**, not an already exported APK/IPA. It uses the Godot engine to compile genuine installed apps (not a webview). There are **no plugins, third-party SDKs, ads, logins, analytics, trackers, or network calls**. The garden save file stays on the device. Illustration combines built-in 2D shapes with eight original, locally bundled SVG plant sprites, and sound effects are bundled as generated WAV files.
 
 **Canonical source of truth / Git origin:** https://github.com/nandahtoon/MyLittleGarden (main). All accepted source, designs, specifications and changes belong here. See [repository policy](docs/REPOSITORY_POLICY.md).
 
@@ -24,6 +24,9 @@ LittleWonderGarden/
 ├── scripts/
 │   ├── garden_game.gd           # Scene state, touch input, visuals, progression
 │   └── save_store.gd            # Offline JSON save adapter; versioned format
+├── assets/art/                  # Eight original local SVG plant sprites
+│   ├── seed.svg, sprout.svg     # Growth stages 1 and 2
+│   └── cosmos.svg, sunflower.svg, tulip.svg, daisy.svg, poppy.svg, bluebell.svg
 ├── assets/audio/                # Short low-volume sounds included with the game
 │   ├── seed.wav
 │   ├── water.wav
@@ -61,7 +64,7 @@ LittleWonderGarden/
 
 ## Current limitations
 
-- This first prototype uses original vector shapes and text; illustrative preview images are **concept previews**, not captured Godot screenshots.
+- The game uses original vector backgrounds and six distinct flower SVG illustrations loaded directly as Godot textures; project previews are **concept previews**, not captured Godot screenshots.
 - Android/iPad native packages have **not** been exported or tested from this environment. Device QA is required, especially safe areas, performance, audio levels and touch accuracy.
 - No spoken narration or Burmese localization yet; create those as a separate asset/localization milestone.
 - No developed Pond/Builder activity yet; the small pond produces only a bird sound.
@@ -71,3 +74,6 @@ LittleWonderGarden/
 ## Design / team guidance
 
 See [DESIGN.md](docs/DESIGN.md) for module ownership, acceptance criteria, touch input behavior, polish backlog, safety and QA matrix.
+## Storybook art direction (v1 polish)
+
+The Garden and Welcome views now use local, original SVG art for seed, sprout and six flower types (cosmos, sunflower, tulip, daisy, poppy and bluebell). SVGs are kept as editable source under `assets/art/`. Each flower has a different appearance without loot, points or random reward mechanics. The larger pastel panels, improved soil beds, and subtle pond/butterfly decoration preserve the existing hit areas, offline-only save contract, break prompts, and parent settings. No downloaded assets or copyrighted character art are used.
