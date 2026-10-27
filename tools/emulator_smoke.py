@@ -227,9 +227,11 @@ def main():
     screenshot("07-rest")
     design_tap(640, 600)  # Rest -> Garden
 
-    # Hold top-right gear for 2.5s to enter grown-up corner.
-    adb("shell", "input", "swipe", str(int(1205*fx)), str(int(64*fy)),
-        str(int(1205*fx)), str(int(64*fy)), "3200", timeout=20)
+    # The app viewport is inset by Android's status/navigation bars and Godot
+    # letterboxes the 1280x800 design within the remaining content height.
+    # 1206,57 in design coordinates is approximately (1156,88) on this emulator.
+    adb("shell", "input", "swipe", str(int(1156*fx)), str(int(88*fy)),
+        str(int(1156*fx)), str(int(88*fy)), "3200", timeout=20)
     time.sleep(1)
     screenshot("08-parent")
     design_tap(600, 433)  # Parent: break interval 10->15
