@@ -90,9 +90,9 @@ jobs:
           s = p.read_text()
           assert "func _ready() -> void:" in s and "func _draw() -> void:" in s
           s = s.replace("func _ready() -> void:",
-                        'func _ready() -> void:\\n    print("LWG_CI_READY")', 1)
+                        'func _ready() -> void:\n    print("LWG_CI_READY")', 1)
           s = s.replace("func _draw() -> void:",
-                        'var _ci_last_screen := ""\\n\\nfunc _draw() -> void:\\n    if _ci_last_screen != screen:\\n        _ci_last_screen = screen\\n        print("LWG_CI_DRAW_SCREEN:", screen, " canvas:", get_viewport_rect().size)', 1)
+                        'var _ci_last_screen := ""\n\nfunc _draw() -> void:\n    if _ci_last_screen != screen:\n        _ci_last_screen = screen\n        print("LWG_CI_DRAW_SCREEN:", screen, " canvas:", get_viewport_rect().size)', 1)
           p.write_text(s)
           PY
           godot --headless --path . --import 2>&1 | tee build/emulator-import.log
