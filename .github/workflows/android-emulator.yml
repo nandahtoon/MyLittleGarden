@@ -28,6 +28,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Install screenshot preview tooling
+        run: python3 -m pip install --user Pillow==11.3.0
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
