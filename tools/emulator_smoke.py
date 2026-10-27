@@ -35,6 +35,16 @@ def screenshot(name: str):
     w, h = struct.unpack(">II", data[16:24])
     (OUT / f"{name}.png").write_bytes(data)
     print(f"Screenshot {name}: {w}x{h}, {len(data)} bytes", flush=True)
+    try:
+        from PIL import Image
+        im = Image.open(BytesIO(data)).convert("RGB")
+        field = im.crop((int(w*.10), int(h*.10), int(w*.90), int(h*.83)))
+        unique = len(set(field.resize((48, 28)).getdata()))
+        print(f"VISUAL_CHECK {name}: center color samples={unique}", flush=True)
+        if name == "01-welcome" and unique < 16:
+            raise AssertionError("Emulator displays a nearly blank scene; reject visual QA even if touch/save works")
+    except ImportError:
+        print("No Pillow visual check available", flush=True)
     # Encode a low-resolution preview in CI logs for remote visual diagnosis.
     try:
         from PIL import Image
@@ -148,8 +158,8 @@ def main():
     design_tap(640, 600)  # Rest -> Garden
 
     # Hold top-right gear for 2.5s to enter grown-up corner.
-    adb("shell", "input", "swipe", str(int(1205*fx)), str(int(64*fy)),
-        str(int(1205*fx)), str(int(64*fy)), "3200", timeout=20)
+    adb("shell", "input", "swipe", str(int(1155*fx)), str(int(83*fy)),
+        str(int(1155*fx)), str(int(83*fy)), "3200", timeout=20)
     time.sleep(1)
     screenshot("08-parent")
     design_tap(600, 433)  # Parent: break interval 10->15
