@@ -33,7 +33,7 @@ def wait_for_garden_pixels(label: str, seconds: int = 18):
     from PIL import Image
     for i in range(seconds):
         data = adb("exec-out", "screencap", "-p", binary=True, timeout=40)
-        if data[:8] == b"\\x89PNG\\r\\n\\x1a\\n":
+        if data[:8] == b"\x89PNG\r\n\x1a\n":
             picture = Image.open(BytesIO(data)).convert("RGB")
             w, h = picture.size
             area = picture.crop((int(w*.15), int(h*.14), int(w*.85), int(h*.82)))
