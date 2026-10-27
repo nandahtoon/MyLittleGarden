@@ -1,5 +1,7 @@
 # Little Wonder Garden — MVP product and engineering design (v1)
 
+> **Design ownership notice (2026-10-27):** This file is the earlier engineering MVP snapshot and retains historical checkboxes. For cross-chat continuity, read [START_HERE](START_HERE.md) first. The current authoritative **product GDD** is [GAME_DESIGN](GAME_DESIGN.md), navigation and exact hit areas are [SCREEN_FLOW](SCREEN_FLOW.md) + [JSON contract](contracts/screen-flow.v1.json), and story/art language is [STORYBOOK_BIBLE](STORYBOOK_BIBLE.md). Actual implementation remains `scripts/garden_game.gd` and CI/Issue #3 supplies test evidence. Do not interpret unchecked historical boxes below as live status; as of this handoff Godot source CI and Android APK export have passed, while end-to-end emulator/physical-device/iPad acceptance remains pending.
+
 ## Goal and audience
 
 For children roughly **4–7 years old**, build a self-directed nature sandbox that encourages slow exploration and restful transitions. It is **designed to be gentle**, not proven to treat anxiety, regulate emotions, or improve learning. Validate through short sessions with the child and feedback from the parent.
