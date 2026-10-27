@@ -1,0 +1,175 @@
+#!/usr/bin/env python3
+"""ADB-driven synthetic emulator smoke test; no child data or real identifiers."""
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+import re
+import struct
+import subprocess
+import time
+
+PKG = "io.github.nandahtoon.mylittlegarden"
+APK = "build/LittleWonderGarden-emulator-debug.apk"
+OUT = Path("build/emulator-evidence")
+OUT.mkdir(parents=True, exist_ok=True)
+
+
+def adb(*args: str, timeout: int = 35, check: bool = True, binary: bool = False):
+    result = subprocess.run(["adb", *args], capture_output=True, timeout=timeout)
+    if check and result.returncode:
+        raise RuntimeError(
+            f"adb {args!r} exited {result.returncode}: "
+            f"{result.stderr.decode(errors='replace')[-1500:]}"
+        )
+    return result.stdout if binary else result.stdout.decode(errors="replace").strip()
+
+
+def screenshot(name: str):
+    data = adb("exec-out", "screencap", "-p", binary=True, timeout=60)
+    if len(data) < 24 or data[:8] != b"\x89PNG\r\n\x1a\n":
+        raise RuntimeError(f"Invalid screenshot {name}, size={len(data)}")
+    w, h = struct.unpack(">II", data[16:24])
+    (OUT / f"{name}.png").write_bytes(data)
+    print(f"Screenshot {name}: {w}x{h}, {len(data)} bytes", flush=True)
+    return w, h
+
+
+def tap(x: int, y: int):
+    adb("shell", "input", "tap", str(x), str(y))
+    time.sleep(0.8)
+
+
+def start():
+    adb("shell", "monkey", "-p", PKG, "-c", "android.intent.category.LAUNCHER", "1", timeout=35)
+    time.sleep(6)
+
+
+def saved_state():
+    # 'run-as' reads only the synthetic app's private save. No personal data involved.
+    paths = adb("shell", "run-as", PKG, "find", ".", "-name", "little_wonder_garden.json")
+    candidates = [p.strip() for p in paths.splitlines() if p.strip().endswith("little_wonder_garden.json")]
+    if not candidates:
+        raise AssertionError("Godot local save file not found (touch not received, or file not persisted)")
+    raw = adb("shell", "run-as", PKG, "cat", candidates[0])
+    state = json.loads(raw)
+    print(f"Observed save: stages={state.get('plots')}, sound={state.get('sound_enabled')}, "
+          f"break={state.get('break_enabled')}/{state.get('break_minutes')}", flush=True)
+    return state
+
+
+def expect(condition: bool, message: str):
+    if not condition:
+        raise AssertionError(message)
+    print("PASS " + message, flush=True)
+
+
+def check_crashes():
+    logs = adb("logcat", "-d", "-v", "brief", timeout=45)
+    (OUT / "logcat.txt").write_text(logs[-250_000:], encoding="utf-8")
+    suspect = [s for s in logs.splitlines() if ("FATAL EXCEPTION" in s or
+                "Fatal signal" in s or "ANR in " in s or "SCRIPT ERROR:" in s)]
+    expect(not suspect, "no Android fatal crash / ANR / Godot script errors in captured logcat")
+
+
+def main():
+    print("Android " + adb("shell", "getprop", "ro.build.version.release"), flush=True)
+    print("ABI " + adb("shell", "getprop", "ro.product.cpu.abi"), flush=True)
+    adb("wait-for-device")
+    adb("shell", "wm", "size", "1280x800")
+    adb("shell", "wm", "density", "240")
+    adb("shell", "settings", "put", "system", "accelerometer_rotation", "0")
+    adb("shell", "settings", "put", "system", "user_rotation", "1")
+    adb("logcat", "-c")
+    print(adb("install", "-r", APK, timeout=180), flush=True)
+    print("Start main launcher", flush=True)
+    start()
+    w, h = screenshot("01-welcome")
+    expect(w > h, "app is in landscape presentation")
+    # Design is 1280x800. Android bars/insets are small; taps target generous hit areas.
+    fx = w / 1280.0
+    fy = h / 800.0
+    def design_tap(x: int, y: int):
+        tap(int(x*fx), int(y*fy))
+    design_tap(640, 618)  # Welcome -> Garden
+    screenshot("02-garden-empty")
+
+    # A tap should persist a stage-1 seed.
+    design_tap(412, 242)
+    one = saved_state()
+    expect(len(one["plots"]) == 9 and one["plots"][0] == 1, "tap soil plants seed on bed 1")
+    screenshot("03-seeded")
+
+    # Water twice: seed->sprout->flower.
+    design_tap(134, 355)
+    design_tap(412, 242)
+    two = saved_state()
+    expect(two["plots"][0] == 2, "watering seed produces sprout")
+    design_tap(412, 242)
+    three = saved_state()
+    expect(three["plots"][0] == 3, "second watering produces flower")
+    screenshot("04-flower")
+
+    # Persist audio toggle across process restart.
+    design_tap(140, 476)
+    muted = saved_state()
+    expect(muted["sound_enabled"] is False, "audio toggle updates persisted setting")
+    adb("shell", "am", "force-stop", PKG)
+    time.sleep(1)
+    start()
+    screenshot("05-restarted")
+    restored = saved_state()
+    expect(restored["plots"][0] == 3 and restored["sound_enabled"] is False,
+           "garden and sound preference survive force-stop/relaunch")
+    design_tap(640, 614)  # Welcome -> Garden after restart
+    screenshot("06-garden-restored")
+
+    design_tap(133, 592)
+    screenshot("07-rest")
+    design_tap(640, 600)  # Rest -> Garden
+
+    # Hold top-right gear for 2.5s to enter grown-up corner.
+    adb("shell", "input", "swipe", str(int(1205*fx)), str(int(64*fy)),
+        str(int(1205*fx)), str(int(64*fy)), "3200", timeout=20)
+    time.sleep(1)
+    screenshot("08-parent")
+    design_tap(600, 433)  # Parent: break interval 10->15
+    settings = saved_state()
+    expect(settings["break_minutes"] == 15, "grown-up long press and reminder setting")
+    design_tap(640, 503)  # First tap arms reset only
+    armed = saved_state()
+    expect(armed["plots"][0] == 3, "first garden-reset tap preserves plants")
+    design_tap(640, 503)  # Second tap clears
+    clear = saved_state()
+    expect(all(p == 0 for p in clear["plots"]), "second reset tap clears all nine plots")
+    screenshot("09-parent-after-reset")
+
+    check_crashes()
+    summary = {
+        "platform": "Android emulator API 34 x86_64",
+        "viewport": [w, h],
+        "tests": [
+            "install_and_landscape", "launch_and_navigate", "plant_seed",
+            "water_sprout", "water_flower", "audio_persistence",
+            "restart_persistence", "rest", "parent_hold", "reminder_setting",
+            "two_step_reset", "logcat_fatal_error_scan"
+        ],
+        "physical_device_tested": False,
+        "ipad_tested": False,
+    }
+    (OUT / "result.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    print("EMULATOR_SMOKE_PASSED", flush=True)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    finally:
+        # Upload screenshots/logcat also when an assertion fails.
+        try:
+            adb("logcat", "-d", "-v", "brief", timeout=45, check=False)
+            log = adb("logcat", "-d", "-v", "brief", timeout=45, check=False)
+            (OUT / "logcat.txt").write_text(log[-250_000:], encoding="utf-8")
+        except Exception as exc:
+            print(f"Warning: logcat capture failed: {exc}", flush=True)
