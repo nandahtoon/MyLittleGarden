@@ -1,0 +1,86 @@
+name: Android debug APK
+
+on:
+  push:
+    branches: [main, "feat/android-debug-apk-ci"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-android-debug:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create local-only debug export preset (no secret signing keys)
+        shell: bash
+        run: |
+          cat > export_presets.cfg <<'EOF'
+          [preset.0]
+          name="Android"
+          platform="Android"
+          runnable=true
+          advanced_options=false
+          dedicated_server=false
+          custom_features=""
+          export_filter="all_resources"
+          include_filter=""
+          exclude_filter=""
+          export_path="build/MyLittleGarden-debug.apk"
+          patches=PackedStringArray()
+          encryption_include_filters=""
+          encryption_exclude_filters=""
+          seed=0
+          encrypt_pck=false
+          encrypt_directory=false
+          script_export_mode=2
+
+          [preset.0.options]
+          custom_template/debug=""
+          custom_template/release=""
+          gradle_build/use_gradle_build=false
+          gradle_build/export_format=0
+          architectures/armeabi-v7a=false
+          architectures/arm64-v8a=true
+          architectures/x86=false
+          architectures/x86_64=false
+          version/code=1
+          version/name="0.1.0"
+          package/unique_name="org.mylittlegarden.littlewondergarden"
+          package/name="Little Wonder Garden"
+          package/signed=true
+          screen/immersive_mode=true
+          screen/support_small=false
+          screen/support_normal=true
+          screen/support_large=true
+          screen/support_xlarge=true
+          user_data_backup/allow=false
+          permissions/internet=false
+          permissions/camera=false
+          permissions/record_audio=false
+          EOF
+
+      - name: Import resources
+        run: godot --headless --path . --import
+
+      - name: Export debug APK
+        shell: bash
+        run: |
+          mkdir -p build
+          godot --headless --path . --export-debug "Android" build/MyLittleGarden-debug.apk
+          test -s build/MyLittleGarden-debug.apk
+          unzip -t build/MyLittleGarden-debug.apk | tail -n 2
+          ls -lh build/MyLittleGarden-debug.apk
+
+      - name: Upload APK for physical tablet QA
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyLittleGarden-Android-debug-APK
+          path: build/MyLittleGarden-debug.apk
+          if-no-files-found: error
+          retention-days: 7
