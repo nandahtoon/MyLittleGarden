@@ -4,7 +4,13 @@
 
 This is an **original source-code MVP prototype**. GitHub Actions produces an **Android debug APK artifact**, but no public store-ready release or tested iPad IPA exists. It uses the Godot engine to compile genuine installed apps (not a webview). There are **no plugins, third-party SDKs, ads, logins, analytics, trackers, or network calls**. The garden save file stays on the device. Illustration combines built-in 2D shapes with eight original, locally bundled SVG plant sprites, and sound effects are bundled as generated WAV files.
 
-**Canonical source of truth / Git origin:** https://github.com/nandahtoon/MyLittleGarden (main). All accepted source, designs, specifications and changes belong here. See [repository policy](docs/REPOSITORY_POLICY.md).
+**Canonical source of truth / Git origin:** https://github.com/nandahtoon/MyLittleGarden (`main`). All accepted source, designs, specifications and changes belong here. See [repository policy](docs/REPOSITORY_POLICY.md).
+
+## Start here — for the next ChatGPT chat, developer or AI agent
+
+Read **[Durable Handoff / START_HERE](docs/START_HERE.md)**, then [Game Design Document](docs/GAME_DESIGN.md), [4-Screen Flow](docs/SCREEN_FLOW.md), [Screen Contract JSON](docs/contracts/screen-flow.v1.json), [Storybook Bible](docs/STORYBOOK_BIBLE.md), and [Work Packages](docs/WORK_PACKAGES.md). These files are versioned with code. **No prior chat transcript is required to continue responsibly.** Check current GitHub PRs, issues and CI before working, because handoff status is a dated snapshot.
+
+Current Android emulator work is in [PR #9](https://github.com/nandahtoon/MyLittleGarden/pull/9); do not duplicate or automatically merge it. The storybook code has been observed rendering under an isolated Godot 4.7.2/Swangle test, but end-to-end Parent Settings QA has **not** passed. Mainline Godot 4.4.1 debug APKs compile; Android physical device and iPad acceptance remain open [Issue #3](https://github.com/nandahtoon/MyLittleGarden/issues/3).
 
 ## Start here — for a new ChatGPT chat, agent or developer
 
@@ -47,11 +53,17 @@ LittleWonderGarden/
 │   ├── bloom.wav
 │   └── bird.wav
 ├── docs/
-│   ├── DESIGN.md                # Product/gameplay/screen specifications
-│   ├── garden-screen-preview.svg# Screen concept (not an engine screenshot)
-│   └── screen-flow.svg          # Navigation diagram
+│   ├── START_HERE.md            # First read for developers and new AI chats
+│   ├── GAME_DESIGN.md           # Source-backed game design document
+│   ├── SCREEN_FLOW.md           # Four-screen UI state machine and hitboxes
+│   ├── STORYBOOK_BIBLE.md       # Story world, characters, visual/copy rules
+│   ├── WORK_PACKAGES.md         # Ownership, delivery milestones and gates
+│   ├── contracts/screen-flow.v1.json  # Versioned behavior contract
+│   ├── DESIGN.md                # Original engineering MVP snapshot
+│   └── ART_DIRECTION.md         # Original sprite gallery
 └── tools/
-    └── validate_structure.py   # Static project validation
+    ├── validate_structure.py    # Static source validation
+    └── validate_design_contracts.py # Design link/state/source consistency
 ```
 
 ## Build for Android tablets
@@ -87,7 +99,8 @@ LittleWonderGarden/
 
 ## Design / team guidance
 
-See [DESIGN.md](docs/DESIGN.md) for module ownership, acceptance criteria, touch input behavior, polish backlog, safety and QA matrix.
+See [START_HERE.md](docs/START_HERE.md) for developer onboarding, [WORK_PACKAGES.md](docs/WORK_PACKAGES.md) for ownership, [DESIGN.md](docs/DESIGN.md) for earlier engineering details and [QA.md](docs/QA.md) for test gates.
+
 ## Storybook art direction (v1 polish)
 
 Browse the [original illustrated flower gallery](docs/ART_DIRECTION.md) to preview source assets; it is **not** a game-device screenshot.
