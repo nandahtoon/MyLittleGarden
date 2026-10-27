@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+<defs><linearGradient id="stem" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#81bd79"/><stop offset="1" stop-color="#508b64"/></linearGradient>
+<linearGradient id="petal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ef7799"/><stop offset="1" stop-color="#d74674"/></linearGradient>
+<linearGradient id="bright" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff8d4"/><stop offset="1" stop-color="#f9d978"/></linearGradient></defs>
+<ellipse cx="120" cy="219" rx="48" ry="7" fill="#5d7c48" opacity=".16"/>
+<path d="M120 213 C112 181 129 135 120 99" fill="none" stroke="#406c4c" stroke-width="13" stroke-linecap="round"/>
+<path d="M120 211 C114 176 129 134 120 100" fill="none" stroke="url(#stem)" stroke-width="8" stroke-linecap="round"/>
+<path d="M116 184 C81 181 62 159 65 140 C93 140 119 146 122 168 Z" fill="#579d74" stroke="#44785b" stroke-width="2"/>
+<path d="M70 147 Q95 160 116 177" fill="none" stroke="#a7d5a0" stroke-width="3" stroke-linecap="round"/>
+<path d="M126 161 C142 128 171 123 187 127 C179 155 160 169 125 171 Z" fill="#71aa77" stroke="#44785b" stroke-width="2"/>
+<path d="M182 133 Q157 145 130 167" fill="none" stroke="#a9d99d" stroke-width="3" stroke-linecap="round"/>
+<ellipse cx="120" cy="73" rx="30" ry="42" fill="url(#petal)" stroke="#c84772" stroke-width="1.8" transform="rotate(0 120 105)"/><ellipse cx="120" cy="73" rx="30" ry="42" fill="url(#petal)" stroke="#c84772" stroke-width="1.8" transform="rotate(72 120 105)"/><ellipse cx="120" cy="73" rx="30" ry="42" fill="url(#petal)" stroke="#c84772" stroke-width="1.8" transform="rotate(144 120 105)"/><ellipse cx="120" cy="73" rx="30" ry="42" fill="url(#petal)" stroke="#c84772" stroke-width="1.8" transform="rotate(216 120 105)"/><ellipse cx="120" cy="73" rx="30" ry="42" fill="url(#petal)" stroke="#c84772" stroke-width="1.8" transform="rotate(288 120 105)"/><circle cx="120" cy="105" r="21" fill="#514f52"/><circle cx="120" cy="105" r="8" fill="#a98f77"/><circle cx="134.0" cy="105.0" r="2.5" fill="#f9d7a0"/><circle cx="130.7" cy="114.0" r="2.5" fill="#f9d7a0"/><circle cx="122.4" cy="118.8" r="2.5" fill="#f9d7a0"/><circle cx="113.0" cy="117.1" r="2.5" fill="#f9d7a0"/><circle cx="106.9" cy="109.8" r="2.5" fill="#f9d7a0"/><circle cx="106.8" cy="100.2" r="2.5" fill="#f9d7a0"/><circle cx="113.0" cy="92.9" r="2.5" fill="#f9d7a0"/><circle cx="122.4" cy="91.2" r="2.5" fill="#f9d7a0"/><circle cx="130.7" cy="96.0" r="2.5" fill="#f9d7a0"/></svg>

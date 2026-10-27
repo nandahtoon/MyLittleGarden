@@ -8,6 +8,8 @@ establish that exported Android or iPad apps work on hardware.
 - [x] Repository structural validation passed on the original source-import commit.
 - [ ] Godot 4.4.1 headless editor import and launch pass on the integration branch.
 - [ ] Desktop Godot editor visual inspection is completed.
+- [ ] SVG seed/sprout/six flower assets import and display on welcome/garden on emulator; check actual screenshot, not only saved state.
+- [ ] Check child-accessible target contrast/typography and correct clipping on common tablets.
 
 ## Android tablet
 - [ ] Export debug APK with Godot Android templates, SDK and JDK 17.

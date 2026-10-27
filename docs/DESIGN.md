@@ -16,7 +16,7 @@ For children roughly **4–7 years old**, build a self-directed nature sandbox t
 
 ## MVP scope
 
-**In:** Welcome, 3x3 Garden, Plant action, Water action, 0–3 stages, subtle sway, plant/water/bloom/bird WAV, pond tap, local save, Rest, parent settings with sound/reminder/reset, Android/iPad build configurations using the same engine source.
+**In:** Welcome, 3x3 Garden, Plant action, Water action, 0–3 stages, eight local SVG plant sprites (seed, sprout and six flowers), subtle sway, plant/water/bloom/bird WAV, pond tap, local save, Rest, parent settings with sound/reminder/reset, Android/iPad build configurations using the same engine source.
 
 **Out:** scores/currency, NPC tasks, inventory, user profiles, cloud, localization/recorded voiceover, animation pipeline, Tiny Builder, full Pond minigame, ads/IAP, multiplayer, notifications.
 
@@ -130,3 +130,10 @@ Validate stage range 0..3, array length <=9 and interval 5..15 when loading. No 
 - https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_ios.html
 - https://developer.apple.com/app-store/review/guidelines/
 - https://support.google.com/googleplay/android-developer/answer/9893335?hl=en
+## Storybook garden visual pass
+
+- Original SVG art in `assets/art/`: seed, sprout, cosmos, sunflower, tulip, daisy, poppy, bluebell; no remote assets or preexisting franchise art.
+- Rendering remains Godot native `draw_texture_rect` for plant sprites over a softly layered, hand-drawn vector environment.
+- Welcome shows three illustrated flowers. Garden retains 3×3 beds, subtle leaves/soil grains, a small pond and a decorative butterfly; no extra reward loop, timer pressure or animation flashes.
+- Tool card and plot hitboxes are deliberately unchanged from the v1 design so existing touch behavior persists.
+- SVG import must be verified in Godot 4.4.1 headless CI, plus visually on at least one Android emulator and real tablet before classifying this as polished and usable.
