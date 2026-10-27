@@ -227,13 +227,25 @@ def main():
     screenshot("07-rest")
     design_tap(640, 600)  # Rest -> Garden
 
-    # The app viewport is inset by Android's status/navigation bars and Godot
-    # letterboxes the 1280x800 design within the remaining content height.
-    # 1206,57 in design coordinates is approximately (1156,88) on this emulator.
-    adb("shell", "input", "swipe", str(int(1156*fx)), str(int(88*fy)),
-        str(int(1156*fx)), str(int(88*fy)), "3200", timeout=20)
-    time.sleep(1)
+    # Game is letterboxed within Android system bars. Strict visual screenshot
+    # verification prevents interpreting a missed hold as a settings pass.
+    from PIL import Image, ImageChops, ImageStat
+    before_parent = Image.open(OUT / "06-garden-restored.png").convert("RGB").resize((128, 80))
+    opened = False
+    for candidate_x, candidate_y in [(1156, 88), (1178, 87), (1145, 90)]:
+        adb("shell", "input", "swipe", str(int(candidate_x*fx)), str(int(candidate_y*fy)),
+            str(int(candidate_x*fx)), str(int(candidate_y*fy)), "3300", timeout=20)
+        time.sleep(0.8)
+        frame = adb("exec-out", "screencap", "-p", binary=True, timeout=45)
+        observed = Image.open(BytesIO(frame)).convert("RGB").resize((128, 80))
+        change = ImageChops.difference(before_parent, observed)
+        amount = sum(ImageStat.Stat(change.crop((37, 12, 90, 65))).mean) / 3
+        print(f"PARENT_HOLD {candidate_x},{candidate_y} center_delta={amount:.1f}", flush=True)
+        if amount > 25.0:
+            opened = True
+            break
     screenshot("08-parent")
+    expect(opened, "grown-up corner visibly opens after long press")
     design_tap(600, 433)  # Parent: break interval 10->15
     settings = saved_state()
     expect(settings["break_minutes"] == 15, "grown-up long press and reminder setting")
