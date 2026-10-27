@@ -2,9 +2,23 @@
 
 **Cross-platform Godot 4.x starter game for Android tablets and Apple iPads.**
 
-This is an **original source-code MVP prototype**, not an already exported APK/IPA. It uses the Godot engine to compile genuine installed apps (not a webview). There are **no plugins, third-party SDKs, ads, logins, analytics, trackers, or network calls**. The garden save file stays on the device. Illustration combines built-in 2D shapes with eight original, locally bundled SVG plant sprites, and sound effects are bundled as generated WAV files.
+This is an **original source-code MVP prototype**. GitHub Actions produces an **Android debug APK artifact**, but no public store-ready release or tested iPad IPA exists. It uses the Godot engine to compile genuine installed apps (not a webview). There are **no plugins, third-party SDKs, ads, logins, analytics, trackers, or network calls**. The garden save file stays on the device. Illustration combines built-in 2D shapes with eight original, locally bundled SVG plant sprites, and sound effects are bundled as generated WAV files.
 
 **Canonical source of truth / Git origin:** https://github.com/nandahtoon/MyLittleGarden (main). All accepted source, designs, specifications and changes belong here. See [repository policy](docs/REPOSITORY_POLICY.md).
+
+## Start here — for a new ChatGPT chat, agent or developer
+
+**Open [docs/START_HERE.md](docs/START_HERE.md) before making changes.** It provides the repository-first handoff, factual milestone evidence, open PRs, pending emulator/parent-gesture blockers, and a paste-ready developer instruction. This GitHub repository (not an attachment or previous chat) is the source of truth.
+
+- [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md) — game design document, goals, mechanics and evidence-based release gates
+- [docs/SCREEN_FLOW.md](docs/SCREEN_FLOW.md) — authoritative four-screen journey and exact touch/state transitions
+- [docs/contracts/screen-flow.v1.json](docs/contracts/screen-flow.v1.json) — machine-readable navigation and garden contract
+- [docs/STORYBOOK_BIBLE.md](docs/STORYBOOK_BIBLE.md) — original story world, non-linear microstories, child-safe art and UI recipes
+- [docs/WORK_PACKAGES.md](docs/WORK_PACKAGES.md) — agent work packages, ownership, dependencies and acceptance
+- [docs/ART_DIRECTION.md](docs/ART_DIRECTION.md) — the eight original SVG illustrations
+- [docs/DESIGN.md](docs/DESIGN.md) — original implementation-focused MVP snapshot (may be older than live CI)
+
+**Design rule:** Current implementation, planned ideas and verified tests are different states. An APK that builds is not proof a child can play it. Do not merge new worlds or publish stores without approval.
 
 ## Play
 
@@ -65,7 +79,7 @@ LittleWonderGarden/
 ## Current limitations
 
 - The game uses original vector backgrounds and six distinct flower SVG illustrations loaded directly as Godot textures; project previews are **concept previews**, not captured Godot screenshots.
-- Android/iPad native packages have **not** been exported or tested from this environment. Device QA is required, especially safe areas, performance, audio levels and touch accuracy.
+- Android debug APK export **has passed** on `main` in GitHub Actions ([example exact-main run](https://github.com/nandahtoon/MyLittleGarden/actions/runs/40448089799)). Native **device** QA is still missing; an iPad signed build has not been verified. Emulator Welcome/Garden/Bloom/Rest rendering and gameplay were observed only on an isolated test branch; **the parent long-press test and end-to-end emulator CI remained failing as of 2026-10-27**. See [current handoff](docs/START_HERE.md) and [Issue #3](https://github.com/nandahtoon/MyLittleGarden/issues/3).
 - No spoken narration or Burmese localization yet; create those as a separate asset/localization milestone.
 - No developed Pond/Builder activity yet; the small pond produces only a bird sound.
 - No continuous real-time growing, no achievements or rewards, and deliberately no punishment/loss mechanic.
