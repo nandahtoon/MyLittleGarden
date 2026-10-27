@@ -1,14 +1,28 @@
-name: Source structure
+name: Godot MVP checks
+
 on:
   push:
+    branches: [main, "feat/**"]
   pull_request:
+
 jobs:
-  smoke:
+  structure:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-      - name: Validate repository files and offline contract
+          python-version: "3.12"
+      - name: Validate source layout and offline contract
         run: python tools/validate_structure.py
+
+  godot-headless:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import assets and parse scripts
+        run: godot --headless --path . --import
+      - name: Launch project for 30 frames
+        run: godot --headless --path . --quit-after 30
