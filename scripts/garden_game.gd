@@ -403,7 +403,7 @@ func _draw_plot(i: int) -> void:
         var grain := Vector2(top.x + 33 + float(j * 27), top.y + 75 + float((i * 11 + j * 17) % 24))
         draw_circle(grain, 2.5, Color("e8bd98", 0.75))
     if plots[i] > 0:
-        var art_name := "seed" if plots[i] == 1 else "sprout" if plots[i] == 2 else FLOWER_ART[i % FLOWER_ART.size()]
+        var art_name: String = "seed" if plots[i] == 1 else "sprout" if plots[i] == 2 else str(FLOWER_ART[i % FLOWER_ART.size()])
         var sway := sin(elapsed * 0.54 + float(i) * 0.71) * 1.6 if plots[i] == 3 else 0.0
         _draw_plant_art(art_name, Rect2(center + Vector2(-67 + sway, -69), Vector2(134, 133)))
     else:
