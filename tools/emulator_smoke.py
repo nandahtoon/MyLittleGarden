@@ -129,6 +129,24 @@ def start():
         raise AssertionError("Godot Android activity did not remain in foreground; screenshots not valid")
 
 
+def start_and_wait(label: str):
+    # A single bounded recovery for emulator-only startup races. Failure is never
+    # suppressed: rerun success/failure and retry count stay in evidence.
+    for attempt in range(1, 3):
+        try:
+            print(f"APP_LAUNCH {label} attempt={attempt}", flush=True)
+            start()
+            wait_for_garden_pixels(label)
+            return attempt
+        except (AssertionError, RuntimeError) as exc:
+            print(f"APP_LAUNCH_RETRY {label} attempt={attempt} reason={exc}", flush=True)
+            if attempt == 2:
+                raise
+            adb("shell", "am", "force-stop", PKG, check=False)
+            time.sleep(3)
+    raise AssertionError("No successful Android emulator app launch")
+
+
 def saved_state():
     # 'run-as' reads only the synthetic app's private save. No personal data involved.
     paths = adb("shell", "run-as", PKG, "find", ".", "-name", "little_wonder_garden.json")
@@ -172,9 +190,8 @@ def main():
     adb("logcat", "-c")
     print(adb("install", "-r", APK, timeout=180), flush=True)
     print("Start main launcher", flush=True)
-    start()
+    boot_attempts = start_and_wait("Welcome")
     print("FOCUS", activity_snapshot(), flush=True)
-    wait_for_garden_pixels("Welcome")
     w, h = screenshot("01-welcome")
     expect(w > h, "app is in landscape presentation")
     # Design is 1280x800. Android bars/insets are small; taps target generous hit areas.
@@ -214,8 +231,7 @@ def main():
     expect(muted["sound_enabled"] is False, "audio toggle updates persisted setting")
     adb("shell", "am", "force-stop", PKG)
     time.sleep(1)
-    start()
-    wait_for_garden_pixels("Restarted welcome")
+    restart_attempts = start_and_wait("Restarted welcome")
     screenshot("05-restarted")
     restored = saved_state()
     expect(restored["plots"][0] == 3 and restored["sound_enabled"] is False,
@@ -262,6 +278,8 @@ def main():
     summary = {
         "platform": "Android emulator API 34 x86_64",
         "viewport": [w, h],
+        "launch_attempts": boot_attempts,
+        "restart_attempts": restart_attempts,
         "tests": [
             "install_and_landscape", "launch_and_navigate", "plant_seed",
             "water_sprout", "water_flower", "audio_persistence",
