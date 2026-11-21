@@ -36,12 +36,15 @@ func _run_test() -> void:
 
     var rest_center: Vector2 = hud.call("_rest_center")
     hud.call("_touch", 22, rest_center, true)
+    # SceneTree.process_frame fires before Node._process; allow world to consume the queued UI action.
+    await process_frame
     await process_frame
     if not bool(hud.get("resting")):
         _fail("Rest control did not pause movement")
         return
 
     hud.call("_touch", 23, rest_center, true)
+    await process_frame
     await process_frame
     if bool(hud.get("resting")):
         _fail("Rest control did not resume")
@@ -50,6 +53,7 @@ func _run_test() -> void:
     player.global_position = Vector3(3.4, 1.1, -4.8)
     var action_center: Vector2 = hud.call("_action_center")
     hud.call("_touch", 24, action_center, true)
+    await process_frame
     await process_frame
     if not bool(game.get("_completed")):
         _fail("Beacon LOOK action did not complete prototype interaction")
