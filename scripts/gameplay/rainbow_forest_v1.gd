@@ -11,6 +11,7 @@ const SEED_POS := Vector3(6.0, 0.0, -4.4)
 var _progress: Dictionary = {}
 var _seed_visual: MeshInstance3D
 var _nova_scene: Node3D
+var _nova_animator: AnimationPlayer
 
 
 func _ready() -> void:
@@ -80,12 +81,25 @@ func _load_real_nova_model() -> void:
     var old_visual := _player.get_node_or_null("PrototypeVisual") as Node3D
     if old_visual != null:
         old_visual.hide()
-    var animator := _nova_scene.find_child("AnimationPlayer", true, false) as AnimationPlayer
-    if animator != null:
-        if animator.has_animation("Idle"):
-            animator.play("Idle")
-        elif animator.get_animation_list().size() > 0:
-            animator.play(animator.get_animation_list()[0])
+    _nova_animator = _nova_scene.find_child("AnimationPlayer", true, false) as AnimationPlayer
+    _play_nova_animation("Idle")
+
+
+func _process(delta: float) -> void:
+    super._process(delta)
+    if not _completed and not _resting and _player != null:
+        var moving: Vector2 = _player.get("movement")
+        _play_nova_animation("Walk" if moving.length_squared() > 0.025 else "Idle")
+
+
+func _play_nova_animation(wanted: String) -> void:
+    if _nova_animator == null:
+        return
+    for clip_name in _nova_animator.get_animation_list():
+        if str(clip_name).ends_with(wanted):
+            if _nova_animator.current_animation != str(clip_name) or not _nova_animator.is_playing():
+                _nova_animator.play(clip_name, 0.14)
+            return
 
 
 func _try_interact() -> void:
@@ -122,6 +136,7 @@ func _complete_mission(approach: String) -> void:
     if not Progress.save_progress(_progress):
         push_warning("Rainbow mission visual completion could not be saved.")
     _show_completed_world()
+    _play_nova_animation("Wave")
     _hud.set("hint", "You helped the rainbow! You can Rest anytime.")
 
 
