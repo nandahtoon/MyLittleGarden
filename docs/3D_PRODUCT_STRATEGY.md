@@ -15,7 +15,7 @@ A kind, curious native 3D adventure world in which a child can **explore, experi
 7. **Child privacy:** no ads, accounts, social chat, external analytics/SDKs or cloud sync in first release. A policy/owner review is required before any change.
 
 ## Game architecture from a player perspective
-- **Wonder Home:** central calm home/garden and place for building; existing 2D garden stays accessible during transition; proposed future 3D home does not replace it until proven.
+- **Wonder Home:** central **3D** calm home/garden and place for building; existing 2D garden is a temporary runnable baseline during transition. After a verified 3D Home and migration, retire obsolete 2D gameplay and art from production, preserving its history in a recoverable Git tag. See LEGACY_2D_CLEANUP_PLAN.md.
 - **Rainbow Forest:** first bounded 3D micro-world; colors, shapes, observation, pattern bridges, safe platform mechanics.
 - **Tinker Valley:** build/repair and explore mechanisms, simple logic and engineering.
 - **Ocean Cove:** Aqua/underwater ecology and observation, not realistic drowning/violent hazard.
@@ -54,7 +54,7 @@ All character abilities have animation states, touch/action mappings, contextual
 Return to a **meaningful place**, not to keep a streak. Progress: saved world changes, optional visible story chapters, expanded materials and creative tools. No penalty for absence. No daily login rewards. A child must be able to stop after a short chapter with a positive ending. Parents can control pacing and sound. Optional offline co-play is a research topic, not a first release requirement.
 
 ## Product boundaries
-First 3D vertical slice is **one bot (Nova), one small Rainbow Forest area, one end-to-end shape/bridge mission**, touch control, hint, save, Rest and return to existing garden. Terra and additional chapters only after its evidence gates pass.
+First 3D vertical slice is **one bot (Nova), one small Rainbow Forest area, one end-to-end shape/bridge mission**, touch control, hint, save, Rest and temporary return to the baseline garden. **Final release** uses a verified 3D Wonder Home; the legacy 2D scene is not a permanent game mode. Terra and additional chapters only after its evidence gates pass.
 - No live AI chat, child voice/camera capture, user-generated network sharing, multiplayer, purchases, notifications, aggressive engagement loops or collection of child identifiers in first release.
 - Art direction: distinctive original rounded toy-like characters, readable silhouette, saturated but moderated color, stable camera and reduced-motion option; render quality must be judged on entry Android devices.
 - Do not market educational efficacy as clinically or academically proven; use observational claims and validation limits.
