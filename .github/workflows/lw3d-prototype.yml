@@ -31,7 +31,8 @@ jobs:
           set -euo pipefail
           godot --headless --path . --import 2>&1 | tee 3d-import.log
           godot --headless --path . res://scenes/prototypes/lw3d_spike.tscn --quit-after 90 2>&1 | tee 3d-runtime.log
-          if grep -Ein 'SCRIPT ERROR|Parse Error|Parser Error|Invalid call|Invalid get index|Failed loading resource' 3d-import.log 3d-runtime.log; then
+          godot --headless --path . --script tools/lw3d_scene_test.gd 2>&1 | tee 3d-test.log
+          if grep -Ein 'SCRIPT ERROR|Parse Error|Parser Error|Invalid call|Invalid get index|Failed loading resource|FAIL LW3D' 3d-import.log 3d-runtime.log 3d-test.log; then
             echo "3D scene failed import or runtime"
             exit 1
           fi
@@ -43,6 +44,7 @@ jobs:
           path: |
             3d-import.log
             3d-runtime.log
+            3d-test.log
           if-no-files-found: ignore
 
   android-3d-test-apk:
