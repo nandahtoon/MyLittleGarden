@@ -20,7 +20,8 @@ New 3D work package prefix **LW3D** avoids collision with existing 2D M0–M5 ba
 | LW3D-B1 | Closed beta | 5 authored missions; Nova + only extra companion justified by tests; sound/graphics prefs | Device matrix, save upgrades, learning observation, no unresolved P0/P1 | PLANNED |
 | LW3D-W2 | Creative expansion | Garden/Home builder, local Living Storybook, repeatable workshop modules | Asset, content, safety and recovery test suites; creative freedom confirmed | PLANNED |
 | LW3D-W3 | New worlds | Terra/Aqua/Pip, Tinker Valley, Ocean Cove, then Observatory | Mission schema reused without new engine rewrite, art/QA gates per world | PLANNED |
-| LW3D-R1 | Commercial Android | Signed AAB, target-age/data policy, parental gates, store assets | Human publication sign-off, legal/privacy review, real-device QA | BLOCKED ON APPROVAL |
+| LW3D-CUT | 3D-only production cutover & cleanup | Recoverable 2D baseline tag, validated v1 save migration, switch one main scene; remove now-obsolete 2D art/code after reference/export scan | 3D home+mission/Rest/Parent parity, exact-SHA CI, Android device, APK/AAB resource inventory & rollback | BLOCKED ON 3D ACCEPTANCE |
+| LW3D-R1 | Commercial Android | Signed AAB, target-age/data policy, parental gates, store assets | Human publication sign-off, legal/privacy review, real-device QA **and LW3D-CUT cleanup gate** | BLOCKED ON APPROVAL |
 | LW3D-R2 | iPad native | Same content, iPad control/safe areas, Xcode signing, Apple Kids review | Mac/Xcode signed install and physical iPad acceptance | BLOCKED ON TOOLS/APPROVAL |
 | LW3D-X1 | Optional future features | Bilingual audio, local co-play, optional parent purchases or content packs | Separate ADR, parent/legal/accessibility approval; never implicit | IDEA ONLY |
 
@@ -32,6 +33,7 @@ New 3D work package prefix **LW3D** avoids collision with existing 2D M0–M5 ba
 5. V1 complete mission + Android visual/device QA.
 6. U1 child-and-caregiver observation and iteration before full world expansion.
 7. B1 closed beta; only then commit substantial content art production and monetization discussions.
+8. **Before a production 3D release**, complete LW3D-CUT (LEGACY_2D_CLEANUP_PLAN.md): archive a recoverable v1 tag, migrate legacy save, switch one app entry, retire unused 2D runtime/art, update CI and inspect exported APK/AAB for obsolete resources.
 
 ## Work package specification (mandatory)
 Every issue/PR includes: ID, player outcome, implemented vs proposed, files/modules owned, owner and dependencies, allowed actions, privacy/age impact, technical approach, unit/integration/device QA, exact acceptance checks, performance/asset impact, save migration, localization, rollback, estimated scope band and decision blockers. Avoid vague 'improve UI' tickets.
@@ -41,11 +43,11 @@ Every issue/PR includes: ID, player outcome, implemented vs proposed, files/modu
 - **G1:** real Android native 3D interaction, camera stability, 30 FPS *target* evidenced on specified low-end test class; no claim of tested on other devices.
 - **G2:** one first-to-finish mission, at least two methods, early Rest, audio optional, deterministic result and reopen persistence.
 - **G3:** at least 5 authored missions, model/content QA, automated and human-device test coverage, parent-approved supervised UX results, no severe unresolved accessibility defect.
-- **G4:** child privacy/legal/store compliance, IAP monetization decisions if any, release signing, target SDK, Play Console disclosures, owner review; only then distribution.
+- **G4:** child privacy/legal/store compliance, **LW3D-CUT production cleanup and original asset inventory**, IAP monetization decisions if any, release signing, target SDK, Play Console disclosures, owner review; only then distribution.
 - Each gate uses Pass / Fail / Not Run with links, not arbitrary percentages. Missing device evidence => NOT RUN.
 
 ## Rollback and dependency safety
-- Use a feature scene/flag for new 3D content, leaving v1 garden path accessible.
+- Use a feature scene/flag for new 3D content, leaving v1 garden path accessible **temporarily**. After validated cutover, exclude legacy 2D runtime and art from the production export; keep a recoverable Git tag.
 - Version new saves; keep a tested old-format migration path. Provide recovery from interrupted writes.
 - Pin toolchain; change versions in an isolated ADR and comparison PR.
 - Revert failed PRs and preserve evidence; never silently redefine an acceptance test to make it green.
