@@ -1,0 +1,123 @@
+name: LW3D-T1 Native 3D prototype
+
+on:
+  pull_request:
+    paths:
+      - "scripts/prototypes/**"
+      - "scenes/prototypes/**"
+      - "tools/lw3d_scene_test.gd"
+      - ".github/workflows/lw3d-prototype.yml"
+  push:
+    branches: ["feat/lw3d-**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-3d-scene-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pinned Godot 4.4.1
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.4.1
+          use-dotnet: false
+          include-templates: false
+      - name: Import and launch standalone 3D scene
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --import 2>&1 | tee 3d-import.log
+          godot --headless --path . res://scenes/prototypes/lw3d_spike.tscn --quit-after 90 2>&1 | tee 3d-runtime.log
+          godot --headless --path . --script tools/lw3d_scene_test.gd 2>&1 | tee 3d-test.log
+          if grep -Ein 'SCRIPT ERROR|Parse Error|Parser Error|Invalid call|Invalid get index|Failed loading resource|FAIL LW3D' 3d-import.log 3d-runtime.log 3d-test.log; then
+            echo "3D scene failed import or runtime"
+            exit 1
+          fi
+      - name: Store 3D headless logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LW3D-T1-headless-logs
+          path: |
+            3d-import.log
+            3d-runtime.log
+            3d-test.log
+          if-no-files-found: ignore
+
+  android-3d-test-apk:
+    needs: native-3d-scene-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android SDK
+        uses: android-actions/setup-android@v4
+      - name: Install Android SDK components
+        run: sdkmanager --install "platform-tools" "build-tools;34.0.0" "platforms;android-34"
+      - name: Godot 4.4.1 with export templates
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.4.1
+          use-dotnet: false
+          include-templates: true
+      - name: Isolate the prototype from the legacy app
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p = Path("project.godot")
+          data = p.read_text()
+          old = 'run/main_scene="res://scenes/main.tscn"'
+          assert old in data
+          p.write_text(data.replace(old,'run/main_scene="res://scenes/prototypes/lw3d_spike.tscn"'))
+          p = Path("export_presets.cfg")
+          data = p.read_text()
+          old = 'package/unique_name="io.github.nandahtoon.mylittlegarden"'
+          assert old in data
+          data = data.replace(old,'package/unique_name="io.github.nandahtoon.mylittlegarden.spike"')
+          data = data.replace('package/name="Little Wonder Garden"','package/name="LW Garden 3D Test"')
+          p.write_text(data)
+          print("CI runner-only package and main scene override")
+          PY
+          mkdir -p build "$HOME/.config/godot"
+          godot --headless --path . --import
+          cat > "$HOME/.config/godot/editor_settings-4.4.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/java_sdk_path = "$JAVA_HOME"
+          export/android/android_sdk_path = "$ANDROID_SDK_ROOT"
+          EOF
+          keytool -genkeypair -noprompt -keystore "$RUNNER_TEMP/lw3d-spike-debug.keystore" -alias androiddebugkey -storepass android -keypass android -dname "CN=Android Debug,O=MyLittleGarden,C=US" -keyalg RSA -keysize 2048 -validity 365
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=$RUNNER_TEMP/lw3d-spike-debug.keystore" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> "$GITHUB_ENV"
+      - name: Export separate 3D debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --export-debug Android build/LW3D-T1-native-debug.apk 2>&1 | tee build/lw3d-export.log
+          test -s build/LW3D-T1-native-debug.apk
+          unzip -t build/LW3D-T1-native-debug.apk | tail -1
+          "$ANDROID_SDK_ROOT/build-tools/34.0.0/aapt" dump badging build/LW3D-T1-native-debug.apk | grep -m1 "^package:"
+          sha256sum build/LW3D-T1-native-debug.apk | tee build/LW3D-T1-native-debug.apk.sha256
+      - name: Upload TEST-ONLY APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: LW3D-T1-native-debug-APK
+          path: |
+            build/LW3D-T1-native-debug.apk
+            build/LW3D-T1-native-debug.apk.sha256
+            build/lw3d-export.log
+          retention-days: 14
+          if-no-files-found: error
