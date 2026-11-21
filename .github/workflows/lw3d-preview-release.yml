@@ -25,8 +25,12 @@ jobs:
           set -euo pipefail
           gh run download "$TEST_RUN" -R "$GITHUB_REPOSITORY" --name LW3D-V1-Rainbow-Android-APK --dir release_bundle
           gh run download "$TEST_RUN" -R "$GITHUB_REPOSITORY" --name LW3D-V1-Nova-GLB --dir model_bundle
-          ( cd release_bundle && sha256sum -c LW3D-V1-Rainbow-debug.apk.sha256 )
-          ( cd model_bundle && sha256sum -c nova.glb.sha256 )
+          expected_apk=$(cut -d' ' -f1 release_bundle/LW3D-V1-Rainbow-debug.apk.sha256)
+          actual_apk=$(sha256sum release_bundle/LW3D-V1-Rainbow-debug.apk | cut -d' ' -f1)
+          test "$expected_apk" = "$actual_apk"
+          expected_glb=$(cut -d' ' -f1 model_bundle/nova.glb.sha256)
+          actual_glb=$(sha256sum model_bundle/nova.glb | cut -d' ' -f1)
+          test "$expected_glb" = "$actual_glb"
           test -s release_bundle/LW3D-V1-Rainbow-debug.apk
           test -s model_bundle/nova.glb
       - name: Publish clear QA-only GitHub prerelease
