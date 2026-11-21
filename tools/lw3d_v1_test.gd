@@ -45,10 +45,14 @@ func _test() -> void:
         return
 
     player.global_position = Vector3(6.0, 0.9, -4.4)
+    # The previous wrong-shape tap is independent of this deliberate next action.
+    world.set("_look_cooldown_ms", -100000)
     world.call("_try_interact")
     if int(world.get("_progress").get("seed_stage", 0)) != 1:
         _fail("Seed stage one missing")
         return
+    # A second deliberate interaction is separate from an accidental double tap.
+    world.set("_look_cooldown_ms", -100000)
     world.call("_try_interact")
     if not bool(world.get("_completed")):
         _fail("Nature solution path should complete after planting and watering")

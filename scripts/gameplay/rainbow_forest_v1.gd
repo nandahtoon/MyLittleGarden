@@ -4,6 +4,7 @@ extends "res://scripts/prototypes/lw3d_spike.gd"
 ## This inherits isolated prototype controls. Production replacement is gated on real Android QA.
 
 const Progress = preload("res://scripts/gameplay/rainbow_mission_save.gd")
+const RainbowHud = preload("res://scripts/ui/rainbow_child_hud.gd")
 const TRIANGLE_POS := Vector3(-4.6, 0.0, -3.8)
 const CIRCLE_POS := Vector3(-1.9, 0.0, -3.8)
 const SEED_POS := Vector3(6.0, 0.0, -4.4)
@@ -12,11 +13,14 @@ var _progress: Dictionary = {}
 var _seed_visual: MeshInstance3D
 var _nova_scene: Node3D
 var _nova_animator: AnimationPlayer
+var _keyboard_interact_armed := true
+var _look_cooldown_ms := -100000
 
 
 func _ready() -> void:
     super._ready()
     name = "RainbowForestFirstAdventure"
+    _hud.set("goal", "Restore the rainbow bridge")
     _progress = Progress.load_progress()
     _completed = bool(_progress.get("completed", false))
     _load_real_nova_model()
@@ -26,6 +30,19 @@ func _ready() -> void:
         _hud.set("hint", "Welcome back! Your rainbow bridge is still colorful.")
     else:
         _hud.set("hint", "Help the bridge: find a TRIANGLE or grow a SEED.")
+
+
+func _make_touch_hud() -> void:
+    # A Rainbow-specific child HUD; the T1 controls remain untouched for isolation.
+    var canvas := CanvasLayer.new()
+    canvas.name = "TouchOverlay"
+    add_child(canvas)
+    _hud = Control.new()
+    _hud.name = "PrototypeHUD"
+    _hud.set_script(RainbowHud)
+    _hud.anchor_right = 1.0
+    _hud.anchor_bottom = 1.0
+    canvas.add_child(_hud)
 
 
 func _make_bounded_world() -> void:
@@ -86,10 +103,35 @@ func _load_real_nova_model() -> void:
 
 
 func _process(delta: float) -> void:
+    if not Input.is_key_pressed(KEY_E):
+        _keyboard_interact_armed = true
     super._process(delta)
-    if not _completed and not _resting and _player != null:
-        var moving: Vector2 = _player.get("movement")
-        _play_nova_animation("Walk" if moving.length_squared() > 0.025 else "Idle")
+    if _player == null:
+        return
+
+    # The T1 CharacterBody3D rotates/bobs its original procedural visual.
+    # The imported GLB is a sibling, so mirror that motion instead of facing
+    # a fixed world heading while the player moves sideways.
+    if _nova_scene != null:
+        var prototype := _player.get_node_or_null("PrototypeVisual") as Node3D
+        if prototype != null:
+            _nova_scene.rotation.y = prototype.rotation.y
+            _nova_scene.position.y = -0.55 + prototype.position.y
+
+    if _completed:
+        _hud.set("context_action", "LOOK")
+        return
+    if _resting:
+        return
+    var moving: Vector2 = _player.get("movement")
+    _play_nova_animation("Walk" if moving.length_squared() > 0.025 else "Idle")
+    var at: Vector3 = _player.global_position
+    if at.distance_to(SEED_POS) < 2.5:
+        _hud.set("context_action", "WATER" if int(_progress.get("seed_stage", 0)) == 1 else "PLANT")
+    elif at.distance_to(TRIANGLE_POS) < 2.3:
+        _hud.set("context_action", "MATCH")
+    else:
+        _hud.set("context_action", "LOOK")
 
 
 func _play_nova_animation(wanted: String) -> void:
@@ -103,8 +145,20 @@ func _play_nova_animation(wanted: String) -> void:
 
 
 func _try_interact() -> void:
+    # E is polled every frame by the shared T1 controller. Treat a keyboard hold
+    # as one meaningful action so one keypress cannot plant AND water a seed.
+    if Input.is_key_pressed(KEY_E):
+        if not _keyboard_interact_armed:
+            return
+        _keyboard_interact_armed = false
+    # Also protect against accidental double-tap from touch/mouse input.
+    var now_ms := Time.get_ticks_msec()
+    if now_ms - _look_cooldown_ms < 220:
+        return
+    _look_cooldown_ms = now_ms
+
     if _completed:
-        _hud.set("hint", "The rainbow bridge is restored! Rest or GARDEN.")
+        _hud.set("hint", "The rainbow bridge is restored! Rest or HOME.")
         return
 
     var at := _player.global_position
