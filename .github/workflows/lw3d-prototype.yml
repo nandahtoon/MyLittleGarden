@@ -5,6 +5,7 @@ on:
     paths:
       - "scripts/prototypes/**"
       - "scenes/prototypes/**"
+      - "tools/lw3d_scene_test.gd"
       - ".github/workflows/lw3d-prototype.yml"
   push:
     branches: ["feat/lw3d-**"]
