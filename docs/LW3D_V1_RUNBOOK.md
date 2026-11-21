@@ -37,3 +37,15 @@ Status: IN PROGRESS, requires exact-head CI and real Android QA. Branch: feat/lw
 - CI emits 3D GLB binary and Android APK with distinct package; verify source SHA, hashes and artifacts.
 - Android physical tests: actual scene screenshots, touch multi-finger, runtime crash check, 30 FPS *provisional target* measurement, suspend/resume, shader/material rendering, UI safe-area and child-facing accessibility.
 - Do not merge production or publish publicly unless product owner reviews risks. This is a stacked draft PR against PR #16, and may be retargeted to main only after #16 merges and its checks rerun.
+
+
+## Shareable QA preview — snapshot (2026-11-21)
+A public GitHub **prerelease** was created from the pre-automation verified source commit 4be29595ac9a9e51fd2121e012fb9c79a5a36f36. The build/artifact hashes were compared before publishing. This is **not** a Google Play/production release, nor proof of physical Android success.
+
+- Short link returned by is.gd API: https://is.gd/LWG3DV1
+- Public audited GitHub release: https://github.com/nandahtoon/MyLittleGarden/releases/tag/lw3d-v1-qa-preview-20261121
+- Public APK: https://github.com/nandahtoon/MyLittleGarden/releases/download/lw3d-v1-qa-preview-20261121/LW3D-V1-Rainbow-debug.apk
+- Public original model: https://github.com/nandahtoon/MyLittleGarden/releases/download/lw3d-v1-qa-preview-20261121/nova.glb
+- Release is intentionally tagged to its **exact built source commit**, not whichever development commit is newest. Future PR changes will not silently change the published asset.
+- Developer preview is for supervised testing only. Native physical device test gate remains **NOT RUN**. Public release may be downloaded without GitHub artifact sign-in, but Play Protect/device OS may warn about sideloaded test APKs.
+- The one-shot CI publishing workflow should not be committed into main as an unrestricted recurring release action. Future previews require separate owner-controlled steps.
