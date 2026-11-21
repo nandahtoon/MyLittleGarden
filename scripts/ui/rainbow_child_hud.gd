@@ -134,8 +134,8 @@ func _draw() -> void:
     else:
         _center_text(hint, mid, 100.0 * s, size.x - 380.0 * s, 19, white, s)
 
-    _button(_home_center(), 61.0 * s, "HOME", Color("#EFF7E6"), ink, 18, s)
-    _button(_rest_center(), 61.0 * s, "REST", Color("#FFE2AC"), ink, 18, s)
+    _pill_button(_home_center(), 61.0 * s, "HOME", Color("#EFF7E6"), ink, 18, s)
+    _pill_button(_rest_center(), 61.0 * s, "REST", Color("#FFE2AC"), ink, 18, s)
 
     # Touch-friendly joystick and two primary actions.
     draw_circle(_joy_center(), 106.0 * s, Color(0.06, 0.29, 0.35, 0.49))
@@ -143,19 +143,19 @@ func _draw() -> void:
     draw_circle(_joy_center() + _move_vector * (48.0 * s), 42.0 * s, Color("#72C2D4"))
     _center_text("MOVE", _joy_center().x, _joy_center().y + 8.0 * s, 105.0 * s, 18, ink, s)
 
-    _button(_action_center(), 71.0 * s, context_action, Color("#FFD981"), ink, 17, s)
-    _button(_jump_center(), 71.0 * s, "JUMP", Color("#C6EFF0"), ink, 18, s)
-    _button(_help_center(), 48.0 * s, "?", Color("#FCFAEF"), ink, 28, s)
+    _pill_button(_action_center(), 71.0 * s, context_action, Color("#FFD981"), ink, 17, s)
+    _pill_button(_jump_center(), 71.0 * s, "JUMP", Color("#C6EFF0"), ink, 18, s)
+    _pill_button(_help_center(), 48.0 * s, "?", Color("#FCFAEF"), ink, 28, s)
 
     if resting:
         draw_rect(Rect2(Vector2.ZERO, size), Color(0.05, 0.17, 0.23, 0.84), true)
         _center_text("A LITTLE REST", mid, size.y * 0.43, size.x - 70.0 * s, 38, white, s)
         _center_text("Tap REST to play, or HOME to leave.", mid, size.y * 0.53, size.x - 70.0 * s, 24, white, s)
-        _button(_home_center(), 61.0 * s, "HOME", Color("#EFF7E6"), ink, 18, s)
-        _button(_rest_center(), 61.0 * s, "REST", Color("#FFE2AC"), ink, 18, s)
+        _pill_button(_home_center(), 61.0 * s, "HOME", Color("#EFF7E6"), ink, 18, s)
+        _pill_button(_rest_center(), 61.0 * s, "REST", Color("#FFE2AC"), ink, 18, s)
 
 
-func _button(center: Vector2, radius: float, label: String, fill: Color, ink: Color, font_size: int, s: float) -> void:
+func _pill_button(center: Vector2, radius: float, label: String, fill: Color, ink: Color, font_size: int, s: float) -> void:
     draw_circle(center + Vector2(0.0, 4.0 * s), radius, Color(0.02, 0.13, 0.17, 0.25))
     draw_circle(center, radius, fill)
     _center_text(label, center.x, center.y + 7.0 * s, radius * 1.88, font_size, ink, s)
