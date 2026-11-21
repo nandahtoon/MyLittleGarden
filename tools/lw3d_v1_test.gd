@@ -29,6 +29,14 @@ func _test() -> void:
     if visual == null:
         _fail("Original skinned Nova glTF did not instantiate")
         return
+    var animator := visual.find_child("AnimationPlayer", true, false) as AnimationPlayer
+    if animator == null:
+        _fail("Nova animation player was not imported from glTF")
+        return
+    var imported_clips := animator.get_animation_list()
+    if imported_clips.size() < 3:
+        _fail("Expected Idle, Walk and Wave animation tracks in Nova model")
+        return
 
     player.global_position = Vector3(-1.9, 0.9, -3.8)
     world.call("_try_interact")
