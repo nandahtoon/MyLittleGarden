@@ -8,12 +8,13 @@
 3. This index and 3D_PRODUCT_STRATEGY.md — new product direction and differentiation.
 4. 3D_TECH_ARCHITECTURE.md — shared native engine and module ownership.
 5. 3D_RELEASE_PLAN.md — dependencies, release gates, and scoped work packages.
+5a. LEGACY_2D_CLEANUP_PLAN.md — exact current-file inventory and controlled retirement from the future 3D-only production build.
 6. AI_DEVELOPMENT_GOVERNANCE.md — permissions, approval matrix, evidence and agent loop.
 7. RESEARCH_AND_MONITORING.md — research register, monitoring checks, learning experiments and review cadence.
 8. Refresh actual GitHub issues, PRs, current main SHA, workflows and exact-head CI results. These are the current source of truth for implementation status.
 
 ## Important coexistence and precedence rule
-The 2D garden remains a functioning baseline and historical v1 behavior. 3D-first is the **approved product direction**, not a claim that scenes, assets, controls or schema already exist. Do not replace the older v1 navigation, save contract, docs or tested flow with hypothetical 3D text. Preserve current game behavior until a separate approved, tested 3D implementation PR ships. Where contracts conflict, raise a decision record and migrate intentionally. PR #11 (documentation/handoff) and PR #9 (emulator QA) were open when this plan was authored: coordinate rather than writing the same files.
+The 2D garden remains a functioning baseline and historical v1 behavior. 3D-first is the **approved product direction**, not a claim that scenes, assets, controls or schema already exist. **Final target: one 3D-first production app, not a permanent two-game package.** Obsolete 2D code and art are removed from the shipped package only after real 3D replacements, v1-save migration, native QA and a recoverable historical tag. See LEGACY_2D_CLEANUP_PLAN.md. Do not replace the older v1 navigation, save contract, docs or tested flow with hypothetical 3D text. Preserve current game behavior until a separate approved, tested 3D implementation PR ships. Where contracts conflict, raise a decision record and migrate intentionally. PR #11 (documentation/handoff) and PR #9 (emulator QA) were open when this plan was authored: coordinate rather than writing the same files.
 
 ## Baseline evidence snapshot — must be refreshed
 - Repository main inspected: 78b5c8ecc4be6c6c97e52d62e7290b5fa602cf9a (2026-10-27). Verify again before work.
@@ -24,7 +25,7 @@ The 2D garden remains a functioning baseline and historical v1 behavior. 3D-firs
 - Engine and renderer policy: current build pins Godot 4.4.1, Compatibility. Do not opportunistically upgrade based on an isolated emulator experiment; evaluate change with a compatibility matrix.
 
 ## Delivery principle
-One reversible, vertical, evidenced work package per PR. No overlapping writers on the same path or branch. All new 3D code starts behind a separate scene entry/flag, with the 2D fallback intact. Human owner explicitly approves scope expansion, data, money, toolchain switch, licenses and store submission. AI can implement and propose; AI cannot claim independent physical testing or human approval.
+One reversible, vertical, evidenced work package per PR. No overlapping writers on the same path or branch. All new 3D code starts behind a separate scene entry/flag, with the 2D fallback intact only until the verified 3D cutover. Do not package retired 2D scenes/art in the final 3D APK/AAB. Human owner explicitly approves scope expansion, data, money, toolchain switch, licenses and store submission. AI can implement and propose; AI cannot claim independent physical testing or human approval.
 
 ## Start prompt for the next AI developer
 Work only in nandahtoon/MyLittleGarden. Read AGENTS.md, REPOSITORY_POLICY.md and the 3D documents linked in docs/3D_START_HERE.md. Refresh main, open PRs/issues and CI. Preserve current 2D gameplay and versioned save. Select the earliest unblocked 3D work package in 3D_RELEASE_PLAN.md. Do one coherent reversible increment on a topic branch, with code, test, docs, rollback and exact-head evidence. Never merge on failing checks or publish a store build. Do not add child telemetry, accounts, ads, voice recording, third-party services or payments without owner approval and child-safety/privacy review. End with DONE / WORKING / BLOCKED, link, SHA, tested vs untested, next safe action.
