@@ -1,0 +1,57 @@
+name: LW3D-U1 Child UX and Native QA
+
+on:
+  pull_request:
+    paths:
+      - "scripts/ui/**"
+      - "scripts/gameplay/**"
+      - "tools/lw3d_u1_test.gd"
+      - "tools/lw3d_v1_test.gd"
+      - ".github/workflows/lw3d-u1-child-ux.yml"
+  push:
+    branches: ["feat/lw3d-u1-**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ux-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pinned Godot 4.4.1
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.4.1
+          use-dotnet: false
+          include-templates: false
+      - name: Import full Godot scene and model
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --import 2>&1 | tee u1-import.log
+          godot --headless --path . res://scenes/worlds/rainbow_forest_v1.tscn --quit-after 90 2>&1 | tee u1-scene.log
+      - name: Old Rainbow mission regression + new child UX assertions
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --script tools/lw3d_v1_test.gd 2>&1 | tee u1-v1-regression.log
+          godot --headless --path . --script tools/lw3d_u1_test.gd 2>&1 | tee u1-ux-tests.log
+          grep -q "PASS LW3D-V1" u1-v1-regression.log
+          grep -q "PASS LW3D-U1" u1-ux-tests.log
+          if grep -Ein 'SCRIPT ERROR|Parse Error|Parser Error|Invalid call|Invalid get index|Failed loading resource|FAIL LW3D' \
+            u1-import.log u1-scene.log u1-v1-regression.log u1-ux-tests.log; then
+            echo "Failing Godot scene or child UX regression"
+            exit 1
+          fi
+      - name: Upload test logs with exact SHA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LW3D-U1-Godot-test-evidence
+          path: |
+            u1-*.log
+          retention-days: 14
+          if-no-files-found: ignore
