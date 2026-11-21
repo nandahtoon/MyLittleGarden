@@ -1,0 +1,147 @@
+name: LW3D-V1 Nova and Rainbow Forest
+
+on:
+  pull_request:
+    paths:
+      - "scripts/gameplay/**"
+      - "scenes/worlds/**"
+      - "assets/models/**"
+      - "tools/lw3d_v1_test.gd"
+      - "tools/pack_nova_glb.py"
+      - ".github/workflows/lw3d-rainbow.yml"
+  push:
+    branches: ["feat/lw3d-v1-**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-nova-and-rainbow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pack and validate portable Nova GLB
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/pack_nova_glb.py assets/models/nova/nova.gltf build/assets/nova.glb | tee nova-export.log
+          file build/assets/nova.glb
+          test -s build/assets/nova.glb
+          sha256sum build/assets/nova.glb > build/assets/nova.glb.sha256
+      - name: Godot 4.4.1
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.4.1
+          use-dotnet: false
+          include-templates: false
+      - name: Import original skinned glTF and validate gameplay
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --import 2>&1 | tee rainbow-import.log
+          godot --headless --path . res://scenes/worlds/rainbow_forest_v1.tscn --quit-after 90 2>&1 | tee rainbow-runtime.log
+          godot --headless --path . --script tools/lw3d_v1_test.gd 2>&1 | tee rainbow-tests.log
+          grep -q "PASS LW3D-V1:" rainbow-tests.log
+          if grep -Ein 'SCRIPT ERROR|Parse Error|Parser Error|Invalid call|Invalid get index|Failed loading resource|FAIL LW3D' rainbow-import.log rainbow-runtime.log rainbow-tests.log; then
+            echo "Godot rainbow scene or validation test failed"
+            exit 1
+          fi
+      - name: Upload Nova .glb and SHA-256 for modeling/animation QA
+        uses: actions/upload-artifact@v4
+        with:
+          name: LW3D-V1-Nova-GLB
+          path: |
+            build/assets/nova.glb
+            build/assets/nova.glb.sha256
+          retention-days: 30
+          if-no-files-found: error
+      - name: Keep headless validation logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LW3D-V1-headless-evidence
+          path: |
+            rainbow-import.log
+            rainbow-runtime.log
+            rainbow-tests.log
+            nova-export.log
+          if-no-files-found: ignore
+
+  export-android-rainbow-apk:
+    needs: validate-nova-and-rainbow
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android SDK
+        uses: android-actions/setup-android@v4
+      - name: Install required Android SDK packages
+        run: sdkmanager --install "platform-tools" "build-tools;34.0.0" "platforms;android-34"
+      - name: Godot 4.4.1 with export templates
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.4.1
+          use-dotnet: false
+          include-templates: true
+      - name: Build isolated test app without editing repository source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p=Path("project.godot")
+          s=p.read_text()
+          old='run/main_scene="res://scenes/main.tscn"'
+          assert old in s, "legacy baseline changed unexpectedly"
+          p.write_text(s.replace(old,'run/main_scene="res://scenes/worlds/rainbow_forest_v1.tscn"'))
+          p=Path("export_presets.cfg")
+          s=p.read_text()
+          old='package/unique_name="io.github.nandahtoon.mylittlegarden"'
+          assert old in s
+          s=s.replace(old,'package/unique_name="io.github.nandahtoon.mylittlegarden.rainbow"')
+          s=s.replace('package/name="Little Wonder Garden"','package/name="LW Garden Rainbow Test"')
+          p.write_text(s)
+          PY
+          mkdir -p build "$HOME/.config/godot"
+          godot --headless --path . --import
+          cat > "$HOME/.config/godot/editor_settings-4.4.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+
+          [resource]
+          export/android/java_sdk_path = "$JAVA_HOME"
+          export/android/android_sdk_path = "$ANDROID_SDK_ROOT"
+          EOF
+          keytool -genkeypair -noprompt -keystore "$RUNNER_TEMP/lw3d-rainbow-debug.keystore" -alias androiddebugkey -storepass android -keypass android -dname "CN=Android Debug,O=MyLittleGarden,C=US" -keyalg RSA -keysize 2048 -validity 365
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=$RUNNER_TEMP/lw3d-rainbow-debug.keystore" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> "$GITHUB_ENV"
+      - name: Export independent Rainbow debug APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          godot --headless --path . --export-debug Android build/LW3D-V1-Rainbow-debug.apk 2>&1 | tee build/rainbow-export.log
+          test -s build/LW3D-V1-Rainbow-debug.apk
+          unzip -t build/LW3D-V1-Rainbow-debug.apk | tail -1
+          "$ANDROID_SDK_ROOT/build-tools/34.0.0/aapt" dump badging build/LW3D-V1-Rainbow-debug.apk | grep -m1 "^package:"
+          sha256sum build/LW3D-V1-Rainbow-debug.apk > build/LW3D-V1-Rainbow-debug.apk.sha256
+      - name: Upload Android test APK (not Play-ready)
+        uses: actions/upload-artifact@v4
+        with:
+          name: LW3D-V1-Rainbow-Android-APK
+          path: |
+            build/LW3D-V1-Rainbow-debug.apk
+            build/LW3D-V1-Rainbow-debug.apk.sha256
+            build/rainbow-export.log
+          retention-days: 14
+          if-no-files-found: error
