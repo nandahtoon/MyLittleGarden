@@ -142,7 +142,7 @@ func _update_garden_growth() -> void:
 func _show_completed_world() -> void:
     _bridge.material_override = _material(Color("#DFA3E9"))
     for i in range(6):
-        var color := [
+        var color: Color = [
             Color("#F4A4A4"), Color("#F9CF82"), Color("#E2EF8A"),
             Color("#B0E9B8"), Color("#90DBEC"), Color("#D4B5F2")
         ][i]
