@@ -21,6 +21,8 @@ What can the child or parent do after this PR that they could not do before? Wha
 - [ ] Gameplay, mission content contracts, UI states, architecture and docs updated for any actual change
 - [ ] Godot version/renderer unchanged, or comparison ADR, device evidence and owner decision linked
 - [ ] No overlap with active PR writer on the same files or behavior
+- [ ] Legacy 2D dependency classified as KEEP / REUSE / REPLACE / ARCHIVE / REMOVE; no old runtime/art removed before replacement and save/device proof
+- [ ] For a 3D production cutover: one verified main scene, clean exported resources, old v1 save migration, recoverable baseline tag (docs/LEGACY_2D_CLEANUP_PLAN.md)
 
 ## Evidence at this exact SHA
 | Check | Pass / Fail / Not Run | Link / evidence / reason |
