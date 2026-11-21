@@ -5,7 +5,7 @@
 ## Baseline constraints
 - Preserve old scenes/main.tscn, scripts/garden_game.gd and scripts/save_store.gd with their v1 save migration contract during transition.
 - Engine presently validated in CI as Godot 4.4.1 with Compatibility rendering. An emulator branch has tried a later Godot version and different software renderer; it does not prove a safe engine-wide upgrade. Version changes require a separate compatibility experiment on emulator and physical devices.
-- Use one native Godot project. **3D-first** means design new gameplay as 3D rather than writing new 2D adventure to translate later. The legacy 2D garden can remain inside the native project.
+- Use one native Godot project. **3D-first** means design new gameplay as 3D rather than writing new 2D adventure to translate later. The legacy 2D garden can remain only **temporarily** inside the native project while 3D gameplay and save migration are validated. The final 3D production build must exclude superseded 2D scenes/art and duplicate logic under LEGACY_2D_CLEANUP_PLAN.md.
 - No internet permission, external SDK, personal identifier, server, accounts or telemetry for MVP.
 
 ## Proposed module ownership (new paths, not claims of existing files)
@@ -43,7 +43,7 @@ Record ADR for: engine upgrade, renderer, target Android versions, 3D camera sty
 
 ## Verification by layer
 Unit: deterministic action rules, mission branching, hints, save migration.
-Integration: touch inputs, camera, animation, scene transition, Garden↔3D, pause/Rest.
+Integration: touch inputs, camera, animation, **temporary** legacy Garden ↔ 3D scene transition, final 3D-home cutover, pause/Rest, migrated save, and clean exported asset inventory.
 Device: Android real device FPS/thermals/long-play/offline/sleep-resume and accessibility; iPad separately.
 Visual: inspect actual Godot renders, not concept art. PR must label mock screenshots versus running game evidence.
 
