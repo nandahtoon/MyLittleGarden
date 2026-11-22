@@ -98,7 +98,7 @@ static func _model(root: Node3D, asset: String, x: float, z: float, size: float 
     if item == null:
         push_warning("Non-Node3D garden model: " + path)
         return
-    item.name = "W1_" + asset.replace("-", "_")
+    item.name = "W1_" + asset.replace("-", "_") + "_" + str(root.get_child_count())
     item.position = Vector3(x, height_at(x, z) + y_offset, z)
     item.rotation.y = heading
     item.scale = Vector3.ONE * size
