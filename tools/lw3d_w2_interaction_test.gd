@@ -35,7 +35,13 @@ func _run() -> void:
         if plot == null or plot.get_node_or_null("W2GrowthVisual") == null:
             _fail("Missing usable garden bed " + str(i))
             return
-        if plot.get_node_or_null("W2SoilBedCollision/CollisionShape3D") == null:
+        var soil_body := plot.get_node_or_null("W2SoilBedCollision") as StaticBody3D
+        var has_shape := false
+        if soil_body != null:
+            for child in soil_body.get_children():
+                if child is CollisionShape3D and child.shape != null:
+                    has_shape = true
+        if not has_shape:
             _fail("Garden bed physics collision missing")
             return
 
