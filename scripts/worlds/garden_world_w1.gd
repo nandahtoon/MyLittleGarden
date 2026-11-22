@@ -212,8 +212,9 @@ static func _box(root: Node3D, label: String, size: Vector3, center: Vector3, co
         body.add_child(shape)
     var piece := MeshInstance3D.new()
     piece.name = label
-    piece.mesh = BoxMesh.new()
-    piece.mesh.size = size
+    var box_mesh := BoxMesh.new()
+    box_mesh.size = size
+    piece.mesh = box_mesh
     piece.material_override = _material(color)
     if not solid:
         piece.position = center
