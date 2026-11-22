@@ -5,6 +5,7 @@ extends "res://scripts/prototypes/lw3d_spike.gd"
 
 const Progress = preload("res://scripts/gameplay/rainbow_mission_save.gd")
 const RainbowHud = preload("res://scripts/ui/rainbow_child_hud.gd")
+const GardenWorld = preload("res://scripts/worlds/garden_world_w1.gd")
 const TRIANGLE_POS := Vector3(-4.6, 0.0, -3.8)
 const CIRCLE_POS := Vector3(-1.9, 0.0, -3.8)
 const SEED_POS := Vector3(6.0, 0.0, -4.4)
@@ -80,6 +81,7 @@ func _make_bounded_world() -> void:
             Vector3(0.32, 0.39, 0.32),
             [Color("#E6A6C6"), Color("#E8C764"), Color("#B5D98D")][i % 3])
 
+    GardenWorld.build(self)
 
 func _load_real_nova_model() -> void:
     # The glTF source is real skinned 3D geometry, not a 2D character concept.
