@@ -6,11 +6,13 @@ extends "res://scripts/prototypes/lw3d_spike.gd"
 const Progress = preload("res://scripts/gameplay/rainbow_mission_save.gd")
 const RainbowHud = preload("res://scripts/ui/rainbow_child_hud.gd")
 const GardenWorld = preload("res://scripts/worlds/garden_world_w1.gd")
+const PlotProgress = preload("res://scripts/gameplay/garden_plot_progress.gd")
 const TRIANGLE_POS := Vector3(-4.6, 0.0, -3.8)
 const CIRCLE_POS := Vector3(-1.9, 0.0, -3.8)
 const SEED_POS := Vector3(6.0, 0.0, -4.4)
 
 var _progress: Dictionary = {}
+var _garden_state: Dictionary = {}
 var _seed_visual: MeshInstance3D
 var _nova_scene: Node3D
 var _nova_animator: AnimationPlayer
@@ -23,6 +25,10 @@ func _ready() -> void:
     name = "RainbowForestFirstAdventure"
     _hud.set("goal", "Restore the rainbow bridge")
     _progress = Progress.load_progress()
+    _garden_state = PlotProgress.load_progress()
+    var plot_stages: Array = _garden_state.get("plots", [0, 0, 0, 0])
+    for i in range(GardenWorld.FARM_POSITIONS.size()):
+        GardenWorld.render_growth(self, i, int(plot_stages[i]))
     _completed = bool(_progress.get("completed", false))
     _load_real_nova_model()
     _update_garden_growth()
@@ -120,14 +126,20 @@ func _process(delta: float) -> void:
             _nova_scene.rotation.y = prototype.rotation.y
             _nova_scene.position.y = -0.55 + prototype.position.y
 
-    if _completed:
-        _hud.set("context_action", "LOOK")
-        return
     if _resting:
         return
     var moving: Vector2 = _player.get("movement")
     _play_nova_animation("Walk" if moving.length_squared() > 0.025 else "Idle")
     var at: Vector3 = _player.global_position
+    var farm_index := GardenWorld.nearest_farm_plot(at)
+    if farm_index >= 0:
+        var stages: Array = _garden_state.get("plots", [0, 0, 0, 0])
+        var stage := int(stages[farm_index])
+        _hud.set("context_action", "PLANT" if stage == 0 else ("WATER" if stage < 3 else "LOOK"))
+        return
+    if _completed:
+        _hud.set("context_action", "LOOK")
+        return
     if at.distance_to(SEED_POS) < 2.5:
         _hud.set("context_action", "WATER" if int(_progress.get("seed_stage", 0)) == 1 else "PLANT")
     elif at.distance_to(TRIANGLE_POS) < 2.3:
@@ -159,11 +171,15 @@ func _try_interact() -> void:
         return
     _look_cooldown_ms = now_ms
 
+    var at := _player.global_position
+    var farm_index := GardenWorld.nearest_farm_plot(at)
+    if farm_index >= 0:
+        _tend_garden_plot(farm_index)
+        return
     if _completed:
-        _hud.set("hint", "The rainbow bridge is restored! Rest or HOME.")
+        _hud.set("hint", "The rainbow bridge is restored! Explore your garden or REST.")
         return
 
-    var at := _player.global_position
     if at.distance_to(TRIANGLE_POS) < 2.3:
         _complete_mission("shape")
     elif at.distance_to(CIRCLE_POS) < 2.3:
@@ -183,6 +199,29 @@ func _try_interact() -> void:
             Progress.save_progress(_progress)
     else:
         _hud.set("hint", "Walk near the BLUE triangle or GREEN garden bed.")
+
+
+
+func _tend_garden_plot(plot_index: int) -> void:
+    # Relaxed, optional activity even after the Rainbow mission is finished.
+    var stages: Array = _garden_state.get("plots", [0, 0, 0, 0])
+    var stage := clampi(int(stages[plot_index]), 0, 3)
+    if stage >= 3:
+        _hud.set("hint", "A lovely garden! Try another little garden bed.")
+        return
+    var updated: Array = stages.duplicate()
+    updated[plot_index] = stage + 1
+    _garden_state["plots"] = updated
+    if not PlotProgress.save_progress(_garden_state):
+        push_warning("Garden change is visible, but could not be saved.")
+    GardenWorld.render_growth(self, plot_index, stage + 1)
+    if stage == 0:
+        _hud.set("hint", "Seed planted! Press WATER next to help it grow.")
+    elif stage == 1:
+        _hud.set("hint", "A little sprout! WATER once more.")
+    else:
+        _hud.set("hint", "Your vegetable has grown! Wonderful!")
+    _hud.set("context_action", "WATER" if stage + 1 < 3 else "LOOK")
 
 
 func _complete_mission(approach: String) -> void:
