@@ -6,6 +6,11 @@ extends RefCounted
 const MODELS := "res://assets/models/kenney_nature/"
 const EXTENT := 14.0
 const GRID := 32
+const FARM_POSITIONS := [
+    Vector2(9.0, -7.5), Vector2(10.7, -7.5),
+    Vector2(9.0, -9.2), Vector2(10.7, -9.2)
+]
+
 
 
 static func build(root: Node3D) -> void:
@@ -103,6 +108,22 @@ static func _model(root: Node3D, asset: String, x: float, z: float, size: float 
     item.rotation.y = heading
     item.scale = Vector3.ONE * size
     root.add_child(item)
+    # Only solid obstacles get approximated physics. Small flowers and grass
+    # intentionally remain non-solid so children cannot become trapped.
+    if asset.begins_with("tree-") or asset == "rock-largea":
+        var tree := asset.begins_with("tree-")
+        var radius := (0.38 if tree else 0.52) * size
+        var height := (1.60 if tree else 0.72) * size
+        var body := StaticBody3D.new()
+        body.name = "W2Obstacle_" + str(root.get_child_count())
+        body.position = Vector3(x, height_at(x, z) + height * 0.5, z)
+        var collision := CollisionShape3D.new()
+        var shape := CylinderShape3D.new()
+        shape.radius = radius
+        shape.height = height
+        collision.shape = shape
+        body.add_child(collision)
+        root.add_child(body)
 
 
 static func _place_nature(root: Node3D) -> void:
@@ -187,14 +208,68 @@ static func _stone(root: Node3D, x: float, z: float, size: float) -> void:
 
 
 static func _farm(root: Node3D) -> void:
-    # Decorative market garden, kept away from active seed mission position.
-    for i in range(4):
-        var x := 9.0 + float(i % 2) * 1.7
-        var z := -7.5 - float(i / 2) * 1.7
-        _box(root, "W1RaisedVegetableBed", Vector3(1.3, 0.25, 1.3), Vector3(x, height_at(x, z) + 0.05, z), Color("#986B4D"))
-        _model(root, "crop-carrot" if i % 2 == 0 else "crop-pumpkin", x, z, 0.8, 0.0, 0.22)
+    # Four persistent growable beds. Unlike W1's decorative crops they begin
+    # empty and have individual stage visuals and small collision platforms.
+    for i in range(FARM_POSITIONS.size()):
+        var site: Vector2 = FARM_POSITIONS[i]
+        var bed := Node3D.new()
+        bed.name = "W2GardenPlot%d" % i
+        bed.position = Vector3(site.x, height_at(site.x, site.y), site.y)
+        root.add_child(bed)
+        _box(bed, "W2SoilBed", Vector3(1.3, 0.25, 1.3), Vector3(0, 0.06, 0), Color("#986B4D"), true)
+        _box(bed, "W2SoilTop", Vector3(1.12, 0.06, 1.12), Vector3(0, 0.21, 0), Color("#684D37"))
+        var growth := Node3D.new()
+        growth.name = "W2GrowthVisual"
+        bed.add_child(growth)
     for i in range(3):
         _model(root, "fence-simple", 7.7 + float(i) * 1.5, -10.7, 1.0)
+
+
+static func nearest_farm_plot(player_position: Vector3) -> int:
+    var near_index := -1
+    var best := 2.10
+    var horizontal := Vector2(player_position.x, player_position.z)
+    for i in range(FARM_POSITIONS.size()):
+        var distance := horizontal.distance_to(FARM_POSITIONS[i])
+        if distance < best:
+            best = distance
+            near_index = i
+    return near_index
+
+
+static func render_growth(root: Node3D, plot_index: int, stage: int) -> void:
+    var plot := root.get_node_or_null("W2GardenPlot%d" % plot_index) as Node3D
+    if plot == null:
+        return
+    var growth := plot.get_node_or_null("W2GrowthVisual") as Node3D
+    if growth == null:
+        return
+    for old in growth.get_children():
+        growth.remove_child(old)
+        old.queue_free()
+    if stage <= 0:
+        return
+    if stage == 1:
+        var seed := MeshInstance3D.new()
+        seed.name = "W2Seed"
+        seed.mesh = SphereMesh.new()
+        seed.scale = Vector3(0.18, 0.12, 0.18)
+        seed.position.y = 0.34
+        seed.material_override = _material(Color("#F0CD6E"))
+        growth.add_child(seed)
+        return
+    var asset := "crop-carrot" if plot_index % 2 == 0 else "crop-pumpkin"
+    var packed := load(MODELS + asset + ".glb") as PackedScene
+    if packed == null:
+        push_warning("Missing W2 crop model: " + asset)
+        return
+    var crop := packed.instantiate() as Node3D
+    if crop == null:
+        return
+    crop.name = "W2Crop"
+    crop.position.y = 0.31
+    crop.scale = Vector3.ONE * (0.37 if stage == 2 else 0.85)
+    growth.add_child(crop)
 
 
 static func _box(root: Node3D, label: String, size: Vector3, center: Vector3, color: Color, solid: bool = false, roll: float = 0.0) -> void:
